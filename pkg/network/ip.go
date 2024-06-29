@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// GetIP returns the private or public IP address
 func GetIP(ipType string) (string, error) {
 	switch ipType {
 	case "private":
