@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"nt/pkg/network"
 
@@ -15,9 +16,17 @@ var (
 	// ncCmd represents the nc command
 	ncCmd = &cobra.Command{
 		Use:   "nc",
-		Short: "Test host and port to see if open",
-		Long:  "Test host and port to see if open",
+		Short: "Netcat subcommand to test host and port to see if open",
+		Long:  "Netcat subcommand to test host and port to see if open",
 		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) < 2 {
+				fmt.Println("Usage: nt nc [host] [port]")
+				os.Exit(1)
+			}
+
+			host = args[0]
+			port = args[1]
+
 			fmt.Printf("Testing %s:%s\n", dataMsg(host), dataMsg(port))
 			err := network.Netcat(host, port)
 			if err != nil {
@@ -31,7 +40,4 @@ var (
 
 func init() {
 	rootCmd.AddCommand(ncCmd)
-
-	ncCmd.PersistentFlags().StringVarP(&host, "host", "H", "127.0.0.1", "host to test")
-	ncCmd.PersistentFlags().StringVarP(&port, "port", "p", "80", "port to test")
 }
