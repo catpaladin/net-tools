@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"nt/pkg/network"
+	"github.com/catpaladin/net-tools/pkg/network"
 
 	"github.com/spf13/cobra"
 )

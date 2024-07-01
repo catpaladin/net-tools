@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"nt/pkg/network"
+	"github.com/catpaladin/net-tools/pkg/network"
 
 	"github.com/spf13/cobra"
 )
