@@ -32,6 +32,8 @@ func Netstat() {
 
 func printLinuxTCPConnections() {
 	files := []string{"/proc/net/tcp", "/proc/net/tcp6"}
+	color.Green("%-45s %-15s %s\n", "Local Address", "Port", "PID/Program")
+	color.Green(strings.Repeat("-", 80))
 	for _, filePath := range files {
 		file, err := os.Open(filePath)
 		if err != nil {
@@ -54,7 +56,7 @@ func printLinuxTCPConnections() {
 			if len(program) > 12 {
 				program = program[:12]
 			}
-			color.Green("Local Address: %s:%s, State: LISTEN, PID/Program: %d/%s\n",
+			color.Green("%-45s %-15s %d/%s\n",
 				localAddr, localPort, pid, program)
 		}
 
