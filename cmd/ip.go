@@ -31,5 +31,5 @@ var (
 func init() {
 	rootCmd.AddCommand(ipCmd)
 
-	ipCmd.PersistentFlags().StringVarP(&ipType, "type", "t", "public", "public or private")
+	ipCmd.PersistentFlags().StringVarP(&ipType, "type", "t", "both", "public|private|both")
 }

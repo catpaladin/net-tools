@@ -11,6 +11,21 @@ import (
 // GetIP returns the private or public IP address
 func GetIP(ipType string) (string, error) {
 	switch ipType {
+	case "both":
+		// Find private IP
+		privateIP, err := getPrivateIP()
+		if err != nil {
+			return "", fmt.Errorf("Error getting private IP: %v\n", err)
+		} else {
+			return privateIP, nil
+		}
+		// Find external IP
+		externalIP, err := getExternalIP()
+		if err != nil {
+			return "", fmt.Errorf("Error getting external IP: %v\n", err)
+		} else {
+			return externalIP, nil
+		}
 	case "private":
 		// Find private IP
 		privateIP, err := getPrivateIP()

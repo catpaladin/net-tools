@@ -15,7 +15,7 @@ var (
 
 	// rootCmd represents the base command when called without any subcommands
 	rootCmd = &cobra.Command{
-		Use:   "nt",
+		Use:   "net-tools",
 		Short: "A general purpose network tool",
 		Long:  `A general purpose network tool`,
 	}
