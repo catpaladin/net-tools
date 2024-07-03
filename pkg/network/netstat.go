@@ -169,7 +169,7 @@ func getProcessByInode(inode string) (int, string) {
 
 // uses netstat on the mac, because syscall is too complicated
 func printDarwinTCPConnections() {
-	cmd := exec.Command("netstat", "-an")
+	cmd := exec.Command("netstat", "-an", "|", "grep", "LISTEN")
 	stdout, err := cmd.Output()
 	if err != nil {
 		color.Red("Failed to run netstat command: %v\n", err)
