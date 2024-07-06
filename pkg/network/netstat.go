@@ -42,6 +42,7 @@ func printLinuxTCPConnections() {
 		}
 		defer file.Close()
 
+		rs := RealFileSystem{}
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
 			line := scanner.Text()
@@ -52,7 +53,7 @@ func printLinuxTCPConnections() {
 			if status != listeningState {
 				continue
 			}
-			pid, program := getProcessByInode(inode)
+			pid, program := getProcessByInode(rs, inode)
 			if len(program) > 12 {
 				program = program[:12]
 			}
@@ -64,6 +65,62 @@ func printLinuxTCPConnections() {
 			fmt.Fprintf(os.Stderr, "Error reading file %s: %v\n", filePath, err)
 		}
 	}
+}
+
+// FileSystem defines an interface for filesystem operations.
+type FileSystem interface {
+	Glob(pattern string) ([]string, error)
+	Readlink(name string) (string, error)
+	ReadFile(name string) ([]byte, error)
+}
+
+// RealFileSystem is a concrete implementation of FileSystem using the os and filepath packages.
+type RealFileSystem struct{}
+
+func (fs RealFileSystem) Glob(pattern string) ([]string, error) {
+	return filepath.Glob(pattern)
+}
+
+func (fs RealFileSystem) Readlink(name string) (string, error) {
+	return os.Readlink(name)
+}
+
+func (fs RealFileSystem) ReadFile(name string) ([]byte, error) {
+	return os.ReadFile(name)
+}
+
+// getProcessByInode retrieves the PID and command line of the process associated with the given inode.
+func getProcessByInode(fs FileSystem, inode string) (int, string) {
+	procDirs, err := fs.Glob("/proc/[0-9]*/fd/[0-9]*")
+	if err != nil {
+		return 0, ""
+	}
+
+	for _, fdPath := range procDirs {
+		link, err := fs.Readlink(fdPath)
+		if err != nil || !strings.Contains(link, "socket:["+inode+"]") {
+			continue
+		}
+
+		parts := strings.Split(fdPath, "/")
+		if len(parts) < 3 {
+			continue
+		}
+
+		pid, err := strconv.Atoi(parts[2])
+		if err != nil {
+			continue
+		}
+
+		cmdline, err := fs.ReadFile(filepath.Join("/proc", parts[2], "cmdline"))
+		if err != nil {
+			continue
+		}
+
+		return pid, strings.ReplaceAll(string(cmdline), "\x00", " ")
+	}
+
+	return 0, ""
 }
 
 func parseLinuxTCPLine(line string) (localAddr, localPort, remoteAddr, remotePort, status, inode string) {
@@ -98,7 +155,10 @@ func parseHexIP(hex string) string {
 	if len(hex) == 32 { // IPv6
 		return parseHexIPv6(hex)
 	}
-	return parseHexIPv4(hex)
+	if len(hex) == 8 { // IPv4
+		return parseHexIPv4(hex)
+	}
+	return "0.0.0.0" // Invalid length, return default invalid IP
 }
 
 func parseHexIPv4(hex string) string {
@@ -132,39 +192,6 @@ func parseHexToInt(hex string) int {
 	var result int
 	fmt.Sscanf(hex, "%x", &result)
 	return result
-}
-
-func getProcessByInode(inode string) (int, string) {
-	procDirs, err := filepath.Glob("/proc/[0-9]*/fd/[0-9]*")
-	if err != nil {
-		return 0, ""
-	}
-
-	for _, fdPath := range procDirs {
-		link, err := os.Readlink(fdPath)
-		if err != nil || !strings.Contains(link, "socket:["+inode+"]") {
-			continue
-		}
-
-		parts := strings.Split(fdPath, "/")
-		if len(parts) < 3 {
-			continue
-		}
-
-		pid, err := strconv.Atoi(parts[2])
-		if err != nil {
-			continue
-		}
-
-		cmdline, err := os.ReadFile(filepath.Join("/proc", parts[2], "cmdline"))
-		if err != nil {
-			continue
-		}
-
-		return pid, strings.ReplaceAll(string(cmdline), "\x00", " ")
-	}
-
-	return 0, ""
 }
 
 // uses netstat on the mac, because syscall is too complicated

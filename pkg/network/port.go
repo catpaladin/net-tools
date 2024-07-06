@@ -19,7 +19,7 @@ func (d NetDialer) Dial(network, address string) (net.Conn, error) {
 }
 
 // Netcat connects to the specified host and port using the provided Dialer.
-func Netcat(dialer Dialer, host, port string) error {
+func Netcat(host, port string) error {
 	d := NetDialer{}
 	err := netcatDialer(d, host, port)
 	if err != nil {
