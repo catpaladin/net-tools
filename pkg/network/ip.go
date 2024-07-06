@@ -13,7 +13,8 @@ func GetIP(ipType string) (string, error) {
 	switch ipType {
 	case "private":
 		// Find private IP
-		privateIP, err := getPrivateIP()
+		ni := RealNetworkInterface{}
+		privateIP, err := getPrivateIP(ni)
 		if err != nil {
 			return "", fmt.Errorf("error getting private IP: %v", err)
 		} else {
@@ -21,7 +22,8 @@ func GetIP(ipType string) (string, error) {
 		}
 	case "public":
 		// Find external IP
-		externalIP, err := getExternalIP()
+		hc := RealHTTPClient{}
+		externalIP, err := getExternalIP(hc)
 		if err != nil {
 			return "", fmt.Errorf("error getting external IP: %v", err)
 		} else {
@@ -32,8 +34,28 @@ func GetIP(ipType string) (string, error) {
 	}
 }
 
-func getPrivateIP() (string, error) {
-	interfaces, err := net.Interfaces()
+// NetworkInterface represents a network interface.
+type NetworkInterface interface {
+	Interfaces() ([]net.Interface, error)
+	Addrs(iface net.Interface) ([]net.Addr, error)
+}
+
+// RealNetworkInterface is a concrete implementation of NetworkInterface using the net package.
+type RealNetworkInterface struct{}
+
+// Interfaces returns the list of system network interfaces.
+func (r RealNetworkInterface) Interfaces() ([]net.Interface, error) {
+	return net.Interfaces()
+}
+
+// Addrs returns the list of addresses for a given network interface.
+func (r RealNetworkInterface) Addrs(iface net.Interface) ([]net.Addr, error) {
+	return iface.Addrs()
+}
+
+// getPrivateIP retrieves the first non-loopback, IPv4 address.
+func getPrivateIP(netIf NetworkInterface) (string, error) {
+	interfaces, err := netIf.Interfaces()
 	if err != nil {
 		return "", err
 	}
@@ -42,7 +64,7 @@ func getPrivateIP() (string, error) {
 		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
 			continue // interface down or loopback interface
 		}
-		addrs, err := iface.Addrs()
+		addrs, err := netIf.Addrs(iface)
 		if err != nil {
 			return "", err
 		}
@@ -65,8 +87,22 @@ func getPrivateIP() (string, error) {
 	return "", fmt.Errorf("no private IP address found")
 }
 
-func getExternalIP() (string, error) {
-	response, err := http.Get("http://checkip.amazonaws.com/")
+// HTTPClient is an interface that defines the method for making HTTP GET requests.
+type HTTPClient interface {
+	Get(url string) (resp *http.Response, err error)
+}
+
+// RealHTTPClient is a concrete implementation of HTTPClient using the net/http package.
+type RealHTTPClient struct{}
+
+// Get makes an HTTP GET request.
+func (r RealHTTPClient) Get(url string) (*http.Response, error) {
+	return http.Get(url)
+}
+
+// getExternalIP retrieves the external IP address by making an HTTP request.
+func getExternalIP(client HTTPClient) (string, error) {
+	response, err := client.Get("http://checkip.amazonaws.com/")
 	if err != nil {
 		return "", err
 	}
