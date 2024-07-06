@@ -1,3 +1,6 @@
+//go:build linux
+// +build linux
+
 package network
 
 import (
@@ -5,9 +8,7 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 
@@ -20,17 +21,6 @@ const (
 
 // Netstat retrieves and prints TCP connections
 func Netstat() {
-	switch runtime.GOOS {
-	case "linux":
-		printLinuxTCPConnections()
-	case "darwin":
-		printDarwinTCPConnections()
-	default:
-		color.Red("Unsupported platform: %s\n", runtime.GOOS)
-	}
-}
-
-func printLinuxTCPConnections() {
 	files := []string{"/proc/net/tcp", "/proc/net/tcp6"}
 	color.Green("%-45s %-15s %s\n", "Local Address", "Port", "PID/Program")
 	color.Green(strings.Repeat("-", 80))
@@ -192,26 +182,4 @@ func parseHexToInt(hex string) int {
 	var result int
 	fmt.Sscanf(hex, "%x", &result)
 	return result
-}
-
-// uses netstat on the mac, because syscall is too complicated
-func printDarwinTCPConnections() {
-	cmd := exec.Command("netstat", "-an", "|", "grep", "LISTEN")
-	stdout, err := cmd.Output()
-	if err != nil {
-		color.Red("Failed to run netstat command: %v\n", err)
-		return
-	}
-
-	scanner := bufio.NewScanner(strings.NewReader(string(stdout)))
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "tcp") || strings.HasPrefix(line, "tcp4") || strings.HasPrefix(line, "tcp6") {
-			color.Green(line)
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		color.Red("Error reading netstat output: %v\n", err)
-	}
 }
