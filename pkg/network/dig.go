@@ -153,8 +153,5 @@ func lookupTXTRecords(lookup HostLookup, domain string) []string {
 	if err != nil {
 		return []string{}
 	}
-	for _, txt := range txtRecords {
-		output = append(output, txt)
-	}
-	return output
+	return append(output, txtRecords...)
 }
