@@ -1,0 +1,24 @@
+builds:
+  - id: net-tools
+    main: .
+    binary: net-tools
+    ldflags:
+      - -s -w -X main.VERSION={{ .Version }} -X main.commit={{.Commit}}
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+
+release:
+  prerelease: auto
+  mode: append
+
+universal_binaries:
+  - replace: true
+
+checksum:
+  name_template: 'checksums.txt'
