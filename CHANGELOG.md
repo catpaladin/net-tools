@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/catpaladin/net-tools/compare/v1.0.0...v1.1.0) (2025-08-17)
+
+
+### Features
+
+* add tui command for tools ([15413c3](https://github.com/catpaladin/net-tools/commit/15413c35632df3a898cb4ad1fd86e9f8c56d43ec))
+
 ## 1.0.0 (2025-03-16)
 
 
