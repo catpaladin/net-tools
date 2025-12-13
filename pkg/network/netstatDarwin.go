@@ -4,31 +4,82 @@
 package network
 
 import (
-	"bufio"
-	"os/exec"
+	"fmt"
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/shirou/gopsutil/v4/net"
+	"github.com/shirou/gopsutil/v4/process"
 )
 
-// Netstat retrieves and prints TCP connections
+// Netstat retrieves and prints TCP connections using pure Go
 func Netstat() {
-	cmd := exec.Command("netstat", "-an", "|", "grep", "LISTEN")
-	stdout, err := cmd.Output()
+	// Get all TCP connections
+	connections, err := net.Connections("tcp")
 	if err != nil {
-		color.Red("Failed to run netstat command: %v\n", err)
+		color.Red("Failed to get network connections: %v\n", err)
 		return
 	}
 
-	scanner := bufio.NewScanner(strings.NewReader(string(stdout)))
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "tcp") || strings.HasPrefix(line, "tcp4") || strings.HasPrefix(line, "tcp6") {
-			color.Green(line)
+	// Print header matching Linux format
+	color.Green("%-45s %-15s %s\n", "Local Address", "Port", "PID/Program")
+	color.Green(strings.Repeat("-", 80))
+
+	// Filter and display only LISTEN state connections
+	for _, conn := range connections {
+		if conn.Status != "LISTEN" {
+			continue
 		}
+
+		// Format local address
+		localAddr := formatAddress(conn.Laddr.IP)
+		localPort := fmt.Sprintf("%d", conn.Laddr.Port)
+
+		// Get process information
+		pid := conn.Pid
+		programName := getProgramName(pid)
+
+		// Truncate program name if too long
+		if len(programName) > 12 {
+			programName = programName[:12]
+		}
+
+		// Print in format matching Linux implementation
+		color.Green("%-45s %-15s %d/%s\n",
+			localAddr, localPort, pid, programName)
+	}
+}
+
+// formatAddress formats IP address for display
+func formatAddress(ip string) string {
+	if ip == "" || ip == "0.0.0.0" {
+		return "*"
+	}
+	if ip == "::" {
+		return "[::]"
+	}
+	// IPv6 addresses
+	if strings.Contains(ip, ":") {
+		return "[" + ip + "]"
+	}
+	return ip
+}
+
+// getProgramName retrieves the program name for a given PID
+func getProgramName(pid int32) string {
+	if pid == 0 {
+		return ""
 	}
 
-	if err := scanner.Err(); err != nil {
-		color.Red("Error reading netstat output: %v\n", err)
+	proc, err := process.NewProcess(pid)
+	if err != nil {
+		return ""
 	}
+
+	name, err := proc.Name()
+	if err != nil {
+		return ""
+	}
+
+	return name
 }
