@@ -1,4 +1,4 @@
-package cmd
+package commands
 
 import (
 	"errors"
@@ -7,45 +7,43 @@ import (
 	"net"
 	"strconv"
 
+	"github.com/catpaladin/net-tools/internal/utils"
 	"github.com/catpaladin/net-tools/pkg/network"
 	"github.com/charmbracelet/huh"
-
 	"github.com/spf13/cobra"
 )
 
-var (
-	host string
-	port string
+// NCCmd creates and returns the nc cobra command
+func NCCmd() *cobra.Command {
+	var host string
+	var port string
 
-	// ncCmd represents the nc command
-	ncCmd = &cobra.Command{
+	ncCmd := &cobra.Command{
 		Use:   "nc",
 		Short: "Netcat subcommand to test host and port to see if open",
 		Long:  "Netcat subcommand to test host and port to see if open",
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) < 2 {
-				interactiveNetcat()
+				interactiveNetcat(&host, &port)
 			} else {
 				host = args[0]
 				port = args[1]
 			}
 
-			fmt.Printf("Testing %s:%s\n", dataMsg(host), dataMsg(port))
+			fmt.Printf("Testing %s:%s\n", utils.DataMsg(host), utils.DataMsg(port))
 			err := network.Netcat(host, port)
 			if err != nil {
-				fmt.Printf("%s Error connecting to %s:%s - %v\n", errorMsg("[Error]"), host, port, err)
+				fmt.Printf("%s Error connecting to %s:%s - %v\n", utils.ErrorMsg("[Error]"), host, port, err)
 			} else {
-				fmt.Printf("%s Connection to %s:%s successful\n", successMsg("[Success]"), host, port)
+				fmt.Printf("%s Connection to %s:%s successful\n", utils.SuccessMsg("[Success]"), host, port)
 			}
 		},
 	}
-)
 
-func init() {
-	rootCmd.AddCommand(ncCmd)
+	return ncCmd
 }
 
-func interactiveNetcat() {
+func interactiveNetcat(host, port *string) {
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
@@ -68,7 +66,7 @@ func interactiveNetcat() {
 					}
 					return nil
 				}).
-				Value(&host),
+				Value(host),
 			huh.NewInput().
 				Title("Port to check:").
 				Prompt("? ").
@@ -83,7 +81,7 @@ func interactiveNetcat() {
 					}
 					return nil
 				}).
-				Value(&port),
+				Value(port),
 		),
 	)
 	err := form.Run()

@@ -11,23 +11,28 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"github.com/fatih/color"
 )
+
+// NetstatResult represents a network connection
+type NetstatResult struct {
+	LocalAddr string
+	LocalPort string
+	PID       int32
+	Program   string
+}
 
 const (
 	listeningState = "0A"
 )
 
-// Netstat retrieves and prints TCP connections
-func Netstat() {
+// Netstat retrieves TCP connections and returns raw results
+func Netstat() []NetstatResult {
 	files := []string{"/proc/net/tcp", "/proc/net/tcp6"}
-	color.Green("%-45s %-15s %s\n", "Local Address", "Port", "PID/Program")
-	color.Green(strings.Repeat("-", 80))
+
+	var results []NetstatResult
 	for _, filePath := range files {
 		file, err := os.Open(filePath)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to open file %s: %v\n", filePath, err)
 			continue
 		}
 		defer file.Close()
@@ -47,14 +52,19 @@ func Netstat() {
 			if len(program) > 12 {
 				program = program[:12]
 			}
-			color.Green("%-45s %-15s %d/%s\n",
-				localAddr, localPort, pid, program)
+			results = append(results, NetstatResult{
+				LocalAddr: localAddr,
+				LocalPort: localPort,
+				PID:       int32(pid),
+				Program:   program,
+			})
 		}
 
 		if err := scanner.Err(); err != nil {
-			fmt.Fprintf(os.Stderr, "Error reading file %s: %v\n", filePath, err)
+			// Ignore errors
 		}
 	}
+	return results
 }
 
 // FileSystem defines an interface for filesystem operations.

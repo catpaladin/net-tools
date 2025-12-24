@@ -1,7 +1,21 @@
 builds:
   - id: net-tools
-    main: .
+    main: ./cmd/net-tools
     binary: net-tools
+    ldflags:
+      - -s -w -X main.VERSION={{ .Version }} -X main.commit={{.Commit}}
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+  
+  - id: net-tui
+    main: ./cmd/net-tui
+    binary: net-tui
     ldflags:
       - -s -w -X main.VERSION={{ .Version }} -X main.commit={{.Commit}}
     goos:
@@ -21,4 +35,4 @@ universal_binaries:
   - replace: true
 
 checksum:
-  name_template: 'checksums.txt'
+  name_template: "checksums.txt"

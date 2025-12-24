@@ -5,7 +5,6 @@ import (
 
 	"github.com/catpaladin/net-tools/pkg/network"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/fatih/color"
 )
 
 func (m MainModel) performDig(domain string) tea.Cmd {
@@ -72,10 +71,7 @@ func (m MainModel) performNetstat() tea.Cmd {
 
 	return func() tea.Msg {
 		var buf bytes.Buffer
-		oldOutput := color.Output
-		color.Output = &buf
 		network.Netstat()
-		color.Output = oldOutput
 
 		rawResult := buf.String()
 		connections := parseNetstatOutput(rawResult)

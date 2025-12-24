@@ -3,70 +3,33 @@ package network
 import (
 	"fmt"
 	"net"
-
-	"github.com/fatih/color"
 )
 
-// Dig takes a domain and performs DNS queries
-func Dig(domain string) {
+// DigResult represents the result of a DNS lookup
+type DigResult struct {
+	Domain      string
+	ARecords    []string
+	MXRecords   []string
+	NSRecords   []string
+	CNAMERecord string
+	TXTRecords  []string
+}
+
+// Dig takes a domain and performs DNS queries, returning raw results
+func Dig(domain string) DigResult {
 	nh := NetHostLookup{}
 
-	// Perform a DNS lookup for the A records
-	ars := lookupARecords(nh, domain)
-	if len(ars) > 0 {
-		color.Green("A records for %s:\n", domain)
-		for _, ar := range ars {
-			color.Cyan(ar)
-		}
-	} else {
-		color.Yellow("No A records found for: %s\n", domain)
+	// Perform all DNS lookups
+	result := DigResult{
+		Domain:      domain,
+		ARecords:    lookupARecords(nh, domain),
+		MXRecords:   lookupMXRecords(nh, domain),
+		NSRecords:   lookupNSRecords(nh, domain),
+		CNAMERecord: lookupCNAMERecord(nh, domain),
+		TXTRecords:  lookupTXTRecords(nh, domain),
 	}
-	fmt.Println()
 
-	// Perform a DNS lookup for the MX records
-	mxs := lookupMXRecords(nh, domain)
-	if len(mxs) > 0 {
-		color.Green("MX records for %s:\n", domain)
-		for _, mx := range mxs {
-			color.Cyan(mx)
-		}
-	} else {
-		color.Yellow("No MX records found for: %s\n", domain)
-	}
-	fmt.Println()
-
-	// Perform a DNS lookup for the NS records
-	nss := lookupNSRecords(nh, domain)
-	if len(nss) > 0 {
-		color.Green("NS records for %s:\n", domain)
-		for _, ns := range nss {
-			color.Cyan(ns)
-		}
-	} else {
-		color.Yellow("No NS records found for: %s\n", domain)
-	}
-	fmt.Println()
-
-	// Perform a DNS lookup for the CNAME record
-	cn := lookupCNAMERecord(nh, domain)
-	if cn != "" {
-		color.Green("CNAME record for %s:\n", domain)
-		color.Cyan(cn)
-	} else {
-		color.Yellow("No CNAME found for %s\n", domain)
-	}
-	fmt.Println()
-
-	// Perform a DNS lookup for the TXT records
-	txt := lookupTXTRecords(nh, domain)
-	if len(txt) > 0 {
-		color.Green("TXT records for %s:\n", domain)
-		for _, tx := range txt {
-			color.Cyan(tx)
-		}
-	} else {
-		color.Yellow("No TXT records found for: %s\n", domain)
-	}
+	return result
 }
 
 // HostLookup defines an interface for looking up hostnames.

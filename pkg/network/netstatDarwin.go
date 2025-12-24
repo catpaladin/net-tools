@@ -7,23 +7,27 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/shirou/gopsutil/v4/net"
 	"github.com/shirou/gopsutil/v4/process"
 )
 
-// Netstat retrieves and prints TCP connections using pure Go
-func Netstat() {
+// NetstatResult represents a network connection
+type NetstatResult struct {
+	LocalAddr string
+	LocalPort string
+	PID       int32
+	Program   string
+}
+
+// Netstat retrieves TCP connections using pure Go and returns raw results
+func Netstat() []NetstatResult {
 	// Get all TCP connections
 	connections, err := net.Connections("tcp")
 	if err != nil {
-		color.Red("Failed to get network connections: %v\n", err)
-		return
+		return nil
 	}
 
-	// Print header matching Linux format
-	color.Green("%-45s %-15s %s\n", "Local Address", "Port", "PID/Program")
-	color.Green(strings.Repeat("-", 80))
+	var results []NetstatResult
 
 	// Filter and display only LISTEN state connections
 	for _, conn := range connections {
@@ -44,10 +48,15 @@ func Netstat() {
 			programName = programName[:12]
 		}
 
-		// Print in format matching Linux implementation
-		color.Green("%-45s %-15s %d/%s\n",
-			localAddr, localPort, pid, programName)
+		results = append(results, NetstatResult{
+			LocalAddr: localAddr,
+			LocalPort: localPort,
+			PID:       pid,
+			Program:   programName,
+		})
 	}
+
+	return results
 }
 
 // formatAddress formats IP address for display
