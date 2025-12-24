@@ -66,7 +66,7 @@ func TestNetcat(t *testing.T) {
 				DialFunc: tt.dialFunc,
 			}
 
-			err := netcatDialer(mockDialer, tt.host, tt.port)
+			err := NetcatWithDialer(mockDialer, tt.host, tt.port)
 			if tt.expectErr {
 				assert.Error(t, err)
 			} else {

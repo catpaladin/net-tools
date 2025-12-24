@@ -18,17 +18,17 @@ var (
 
 func init() {
 	// Add all commands to root command
-	digCmd := commands.DigCommand()
-	rootCmd.AddCommand(digCmd)
+	dnsCmd := commands.DNSCommand()
+	rootCmd.AddCommand(dnsCmd)
 
 	ipCmd := commands.IPCmd()
 	rootCmd.AddCommand(ipCmd)
 
-	ncCmd := commands.NCCmd()
-	rootCmd.AddCommand(ncCmd)
+	portCmd := commands.PortCmd()
+	rootCmd.AddCommand(portCmd)
 
-	netstatCmd := commands.NetstatCmd()
-	rootCmd.AddCommand(netstatCmd)
+	processesCmd := commands.ProcessesCmd()
+	rootCmd.AddCommand(processesCmd)
 }
 
 func main() {

@@ -1,10 +1,10 @@
 package commands
 
 import (
-	"fmt"
 	"log"
+	"os"
 
-	"github.com/catpaladin/net-tools/internal/utils"
+	"github.com/catpaladin/net-tools/internal/printers"
 	"github.com/catpaladin/net-tools/pkg/network"
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
@@ -26,24 +26,13 @@ func IPCmd() *cobra.Command {
 			switch ipType {
 			case "both":
 				privateIP, err := network.GetIP("private")
-				if err != nil {
-					fmt.Printf("%s Error getting %s IP: %v\n", utils.ErrorMsg("[Error]"), ipType, err)
-				} else {
-					fmt.Printf("%s Private IP: %s\n", utils.SuccessMsg("[Success]"), utils.DataMsg(privateIP))
-				}
+				printers.PrintIPResult(os.Stdout, "Private", privateIP, err)
+
 				publicIP, err := network.GetIP("public")
-				if err != nil {
-					fmt.Printf("%s Error getting %s IP: %v\n", utils.ErrorMsg("[Error]"), ipType, err)
-				} else {
-					fmt.Printf("%s Public IP: %s\n", utils.SuccessMsg("[Success]"), utils.DataMsg(publicIP))
-				}
+				printers.PrintIPResult(os.Stdout, "Public", publicIP, err)
 			default:
 				ip, err := network.GetIP(ipType)
-				if err != nil {
-					fmt.Printf("%s Error getting %s IP: %v\n", utils.ErrorMsg("[Error]"), ipType, err)
-				} else {
-					fmt.Printf("%s %s IP: %s\n", utils.SuccessMsg("[Success]"), ipType, utils.DataMsg(ip))
-				}
+				printers.PrintIPResult(os.Stdout, ipType, ip, err)
 			}
 		},
 	}

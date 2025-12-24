@@ -20,16 +20,11 @@ func (d NetDialer) Dial(network, address string) (net.Conn, error) {
 
 // Netcat connects to the specified host and port using the provided Dialer.
 func Netcat(host, port string) error {
-	d := NetDialer{}
-	err := netcatDialer(d, host, port)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return NetcatWithDialer(NetDialer{}, host, port)
 }
 
-func netcatDialer(dialer Dialer, host, port string) error {
+// NetcatWithDialer connects to the specified host and port using the provided Dialer.
+func NetcatWithDialer(dialer Dialer, host, port string) error {
 	conn, err := dialer.Dial("tcp", net.JoinHostPort(host, port))
 	if err != nil {
 		return fmt.Errorf("error connecting: %v", err)

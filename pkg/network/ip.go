@@ -10,25 +10,25 @@ import (
 
 // GetIP returns the private or public IP address
 func GetIP(ipType string) (string, error) {
+	return getIPWithDependencies(ipType, RealNetworkInterface{}, RealHTTPClient{})
+}
+
+func getIPWithDependencies(ipType string, netIf NetworkInterface, client HTTPClient) (string, error) {
 	switch ipType {
 	case "private":
 		// Find private IP
-		ni := RealNetworkInterface{}
-		privateIP, err := getPrivateIP(ni)
+		privateIP, err := getPrivateIP(netIf)
 		if err != nil {
 			return "", fmt.Errorf("error getting private IP: %v", err)
-		} else {
-			return privateIP, nil
 		}
+		return privateIP, nil
 	case "public":
 		// Find external IP
-		hc := RealHTTPClient{}
-		externalIP, err := getExternalIP(hc)
+		externalIP, err := getExternalIP(client)
 		if err != nil {
 			return "", fmt.Errorf("error getting external IP: %v", err)
-		} else {
-			return externalIP, nil
 		}
+		return externalIP, nil
 	default:
 		return "", fmt.Errorf("invalid IP type: %s", ipType)
 	}

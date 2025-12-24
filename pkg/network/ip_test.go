@@ -24,6 +24,11 @@ func (m MockNetworkInterface) Addrs(iface net.Interface) ([]net.Addr, error) {
 	return m.AddrsFunc(iface)
 }
 
+type dummyAddr struct{}
+
+func (d dummyAddr) Network() string { return "tcp" }
+func (d dummyAddr) String() string  { return "1.2.3.4" }
+
 func TestGetPrivateIP(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -60,11 +65,17 @@ func TestGetPrivateIP(t *testing.T) {
 			expectErr: true,
 		},
 		{
-			name:       "no interfaces",
-			interfaces: []net.Interface{},
-			addrs:      map[string][]net.Addr{},
-			expected:   "",
-			expectErr:  true,
+			name: "loopback IP on non-loopback interface",
+			interfaces: []net.Interface{
+				{Name: "eth0", Flags: net.FlagUp},
+			},
+			addrs: map[string][]net.Addr{
+				"eth0": {
+					&net.IPNet{IP: net.IPv4(127, 0, 0, 1)},
+				},
+			},
+			expected:  "",
+			expectErr: true,
 		},
 		{
 			name: "interface down",
@@ -72,6 +83,69 @@ func TestGetPrivateIP(t *testing.T) {
 				{Name: "eth0", Flags: 0},
 			},
 			addrs:     map[string][]net.Addr{},
+			expected:  "",
+			expectErr: true,
+		},
+		{
+			name: "interfaces error",
+			interfaces: []net.Interface{
+				{Name: "eth0", Flags: net.FlagUp},
+			},
+			addrs: map[string][]net.Addr{
+				"eth0": {
+					&net.IPNet{IP: net.IPv4(192, 168, 1, 1)},
+				},
+			},
+			err:       assert.AnError,
+			expected:  "",
+			expectErr: true,
+		},
+		{
+			name: "addrs error",
+			interfaces: []net.Interface{
+				{Name: "eth0", Flags: net.FlagUp},
+			},
+			addrs:     map[string][]net.Addr{},
+			err:       assert.AnError,
+			expected:  "",
+			expectErr: true,
+		},
+		{
+			name: "IPAddr type",
+			interfaces: []net.Interface{
+				{Name: "eth0", Flags: net.FlagUp},
+			},
+			addrs: map[string][]net.Addr{
+				"eth0": {
+					&net.IPAddr{IP: net.IPv4(10, 0, 0, 1)},
+				},
+			},
+			expected:  "10.0.0.1",
+			expectErr: false,
+		},
+		{
+			name: "IPv6 ignored",
+			interfaces: []net.Interface{
+				{Name: "eth1", Flags: net.FlagUp},
+			},
+			addrs: map[string][]net.Addr{
+				"eth1": {
+					&net.IPNet{IP: net.ParseIP("fe80::1")},
+				},
+			},
+			expected:  "",
+			expectErr: true,
+		},
+		{
+			name: "unknown addr type",
+			interfaces: []net.Interface{
+				{Name: "eth0", Flags: net.FlagUp},
+			},
+			addrs: map[string][]net.Addr{
+				"eth0": {
+					dummyAddr{},
+				},
+			},
 			expected:  "",
 			expectErr: true,
 		},
@@ -171,4 +245,57 @@ type errorReader struct{}
 
 func (e *errorReader) Read(p []byte) (int, error) {
 	return 0, assert.AnError
+}
+
+func TestGetIPWithDependencies(t *testing.T) {
+	mockNetIf := MockNetworkInterface{
+		InterfacesFunc: func() ([]net.Interface, error) {
+			return []net.Interface{{Name: "eth0", Flags: net.FlagUp}}, nil
+		},
+		AddrsFunc: func(iface net.Interface) ([]net.Addr, error) {
+			return []net.Addr{&net.IPNet{IP: net.IPv4(192, 168, 1, 1)}}, nil
+		},
+	}
+	mockClient := MockHTTPClient{
+		GetFunc: func(url string) (*http.Response, error) {
+			return MockResponse("1.2.3.4", 200), nil
+		},
+	}
+
+	t.Run("private", func(t *testing.T) {
+		res, err := getIPWithDependencies("private", mockNetIf, mockClient)
+		assert.NoError(t, err)
+		assert.Equal(t, "192.168.1.1", res)
+	})
+
+	t.Run("public", func(t *testing.T) {
+		res, err := getIPWithDependencies("public", mockNetIf, mockClient)
+		assert.NoError(t, err)
+		assert.Equal(t, "1.2.3.4", res)
+	})
+
+	t.Run("invalid", func(t *testing.T) {
+		_, err := getIPWithDependencies("invalid", mockNetIf, mockClient)
+		assert.Error(t, err)
+	})
+
+	t.Run("private error", func(t *testing.T) {
+		errNetIf := MockNetworkInterface{
+			InterfacesFunc: func() ([]net.Interface, error) {
+				return nil, assert.AnError
+			},
+		}
+		_, err := getIPWithDependencies("private", errNetIf, mockClient)
+		assert.Error(t, err)
+	})
+
+	t.Run("public error", func(t *testing.T) {
+		errClient := MockHTTPClient{
+			GetFunc: func(url string) (*http.Response, error) {
+				return nil, assert.AnError
+			},
+		}
+		_, err := getIPWithDependencies("public", mockNetIf, errClient)
+		assert.Error(t, err)
+	})
 }

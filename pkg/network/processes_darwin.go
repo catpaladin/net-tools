@@ -11,23 +11,23 @@ import (
 	"github.com/shirou/gopsutil/v4/process"
 )
 
-// NetstatResult represents a network connection
-type NetstatResult struct {
+// ProcessesResult represents a network connection
+type ProcessesResult struct {
 	LocalAddr string
 	LocalPort string
 	PID       int32
 	Program   string
 }
 
-// Netstat retrieves TCP connections using pure Go and returns raw results
-func Netstat() []NetstatResult {
+// Processes retrieves TCP connections using pure Go and returns raw results
+func Processes() []ProcessesResult {
 	// Get all TCP connections
 	connections, err := net.Connections("tcp")
 	if err != nil {
 		return nil
 	}
 
-	var results []NetstatResult
+	var results []ProcessesResult
 
 	// Filter and display only LISTEN state connections
 	for _, conn := range connections {
@@ -48,7 +48,7 @@ func Netstat() []NetstatResult {
 			programName = programName[:12]
 		}
 
-		results = append(results, NetstatResult{
+		results = append(results, ProcessesResult{
 			LocalAddr: localAddr,
 			LocalPort: localPort,
 			PID:       pid,

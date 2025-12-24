@@ -8,8 +8,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// updateDigModel handles updates for the DNS lookup tab
-func (m MainModel) updateDigModel(msg tea.Msg) tea.Cmd {
+// updateDNSModel handles updates for the DNS lookup tab
+func (m MainModel) updateDNSModel(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
@@ -17,8 +17,8 @@ func (m MainModel) updateDigModel(msg tea.Msg) tea.Cmd {
 		switch {
 		case key.Matches(msg, keys.Tab), key.Matches(msg, keys.Down), key.Matches(msg, keys.Up):
 			// Allow viewport scrolling with up/down when there's content
-			if m.digModel.result != "" {
-				m.digModel.viewport, cmd = m.digModel.viewport.Update(msg)
+			if m.dnsModel.result != "" {
+				m.dnsModel.viewport, cmd = m.dnsModel.viewport.Update(msg)
 				return cmd
 			}
 			return nil
@@ -26,81 +26,81 @@ func (m MainModel) updateDigModel(msg tea.Msg) tea.Cmd {
 	}
 
 	// Update text input if it's focused
-	m.digModel.domainInput, cmd = m.digModel.domainInput.Update(msg)
+	m.dnsModel.domainInput, cmd = m.dnsModel.domainInput.Update(msg)
 
 	// Also update viewport for any other messages
 	var viewportCmd tea.Cmd
-	m.digModel.viewport, viewportCmd = m.digModel.viewport.Update(msg)
+	m.dnsModel.viewport, viewportCmd = m.dnsModel.viewport.Update(msg)
 
 	return tea.Batch(cmd, viewportCmd)
 }
 
-// updateNetcatModel handles updates for the port test tab
-func (m MainModel) updateNetcatModel(msg tea.Msg) tea.Cmd {
+// updatePortModel handles updates for the port test tab
+func (m MainModel) updatePortModel(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, keys.Tab):
-			m.ncModel.focused = (m.ncModel.focused + 1) % 2
-			if m.ncModel.focused == 0 {
-				m.ncModel.hostInput.Focus()
-				m.ncModel.hostInput.PromptStyle = focusedPromptStyle
-				m.ncModel.hostInput.TextStyle = focusedTextStyle
-				m.ncModel.portInput.Blur()
-				m.ncModel.portInput.PromptStyle = unfocusedPromptStyle
-				m.ncModel.portInput.TextStyle = unfocusedTextStyle
+			m.portModel.focused = (m.portModel.focused + 1) % 2
+			if m.portModel.focused == 0 {
+				m.portModel.hostInput.Focus()
+				m.portModel.hostInput.PromptStyle = focusedPromptStyle
+				m.portModel.hostInput.TextStyle = focusedTextStyle
+				m.portModel.portInput.Blur()
+				m.portModel.portInput.PromptStyle = unfocusedPromptStyle
+				m.portModel.portInput.TextStyle = unfocusedTextStyle
 			} else {
-				m.ncModel.hostInput.Blur()
-				m.ncModel.hostInput.PromptStyle = unfocusedPromptStyle
-				m.ncModel.hostInput.TextStyle = unfocusedTextStyle
-				m.ncModel.portInput.Focus()
-				m.ncModel.portInput.PromptStyle = focusedPromptStyle
-				m.ncModel.portInput.TextStyle = focusedTextStyle
+				m.portModel.hostInput.Blur()
+				m.portModel.hostInput.PromptStyle = unfocusedPromptStyle
+				m.portModel.hostInput.TextStyle = unfocusedTextStyle
+				m.portModel.portInput.Focus()
+				m.portModel.portInput.PromptStyle = focusedPromptStyle
+				m.portModel.portInput.TextStyle = focusedTextStyle
 			}
 			return nil
 		case key.Matches(msg, keys.Up), key.Matches(msg, keys.Down):
 			// Allow viewport scrolling when there's content, otherwise handle input focus
-			if m.ncModel.result != "" {
-				m.ncModel.viewport, cmd = m.ncModel.viewport.Update(msg)
+			if m.portModel.result != "" {
+				m.portModel.viewport, cmd = m.portModel.viewport.Update(msg)
 				return cmd
 			}
 			// Handle input focus navigation
 			if key.Matches(msg, keys.Down) {
-				m.ncModel.focused = (m.ncModel.focused + 1) % 2
+				m.portModel.focused = (m.portModel.focused + 1) % 2
 			} else {
-				m.ncModel.focused = (m.ncModel.focused - 1 + 2) % 2
+				m.portModel.focused = (m.portModel.focused - 1 + 2) % 2
 			}
-			if m.ncModel.focused == 0 {
-				m.ncModel.hostInput.Focus()
-				m.ncModel.hostInput.PromptStyle = focusedPromptStyle
-				m.ncModel.hostInput.TextStyle = focusedTextStyle
-				m.ncModel.portInput.Blur()
-				m.ncModel.portInput.PromptStyle = unfocusedPromptStyle
-				m.ncModel.portInput.TextStyle = unfocusedTextStyle
+			if m.portModel.focused == 0 {
+				m.portModel.hostInput.Focus()
+				m.portModel.hostInput.PromptStyle = focusedPromptStyle
+				m.portModel.hostInput.TextStyle = focusedTextStyle
+				m.portModel.portInput.Blur()
+				m.portModel.portInput.PromptStyle = unfocusedPromptStyle
+				m.portModel.portInput.TextStyle = unfocusedTextStyle
 			} else {
-				m.ncModel.hostInput.Blur()
-				m.ncModel.hostInput.PromptStyle = unfocusedPromptStyle
-				m.ncModel.hostInput.TextStyle = unfocusedTextStyle
-				m.ncModel.portInput.Focus()
-				m.ncModel.portInput.PromptStyle = focusedPromptStyle
-				m.ncModel.portInput.TextStyle = focusedTextStyle
+				m.portModel.hostInput.Blur()
+				m.portModel.hostInput.PromptStyle = unfocusedPromptStyle
+				m.portModel.hostInput.TextStyle = unfocusedTextStyle
+				m.portModel.portInput.Focus()
+				m.portModel.portInput.PromptStyle = focusedPromptStyle
+				m.portModel.portInput.TextStyle = focusedTextStyle
 			}
 			return nil
 		}
 	}
 
 	var inputCmd tea.Cmd
-	if m.ncModel.focused == 0 {
-		m.ncModel.hostInput, inputCmd = m.ncModel.hostInput.Update(msg)
+	if m.portModel.focused == 0 {
+		m.portModel.hostInput, inputCmd = m.portModel.hostInput.Update(msg)
 	} else {
-		m.ncModel.portInput, inputCmd = m.ncModel.portInput.Update(msg)
+		m.portModel.portInput, inputCmd = m.portModel.portInput.Update(msg)
 	}
 
 	// Also update viewport
 	var viewportCmd tea.Cmd
-	m.ncModel.viewport, viewportCmd = m.ncModel.viewport.Update(msg)
+	m.portModel.viewport, viewportCmd = m.portModel.viewport.Update(msg)
 
 	return tea.Batch(inputCmd, viewportCmd)
 }
@@ -152,10 +152,10 @@ func (m MainModel) updateIPModel(msg tea.Msg) tea.Cmd {
 	return cmd
 }
 
-func (m MainModel) updateNetstatModel(msg tea.Msg) tea.Cmd {
+func (m MainModel) updateProcessesModel(msg tea.Msg) tea.Cmd {
 	// Update viewport for scrolling
 	var cmd tea.Cmd
-	m.netstatModel.viewport, cmd = m.netstatModel.viewport.Update(msg)
+	m.processesModel.viewport, cmd = m.processesModel.viewport.Update(msg)
 	return cmd
 }
 

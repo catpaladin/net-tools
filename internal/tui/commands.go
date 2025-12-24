@@ -1,28 +1,28 @@
 package tui
 
 import (
-	"bytes"
+	"fmt"
 
 	"github.com/catpaladin/net-tools/pkg/network"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func (m MainModel) performDig(domain string) tea.Cmd {
+func (m MainModel) performDNS(domain string) tea.Cmd {
 	return func() tea.Msg {
-		dnsResult := performDigLookup(domain)
+		dnsResult := performDNSLookup(domain)
 		formattedResult := formatDNSResultPlain(domain, dnsResult)
 
-		return digResultMsg{
+		return dnsResultMsg{
 			result: formattedResult,
 			err:    nil,
 		}
 	}
 }
 
-func (m MainModel) performNetcat(host, port string) tea.Cmd {
+func (m MainModel) performPort(host, port string) tea.Cmd {
 	return func() tea.Msg {
 		if err := validatePort(port); err != nil {
-			return netcatResultMsg{
+			return portResultMsg{
 				result: "",
 				err:    err,
 			}
@@ -32,7 +32,7 @@ func (m MainModel) performNetcat(host, port string) tea.Cmd {
 		success := err == nil
 		formattedResult := formatConnectionResultPlain(host, port, success, err)
 
-		return netcatResultMsg{
+		return portResultMsg{
 			result: formattedResult,
 			err:    nil,
 		}
@@ -63,21 +63,30 @@ func (m MainModel) performIPLookup() tea.Cmd {
 	}
 }
 
-func (m MainModel) performNetstat() tea.Cmd {
+func (m MainModel) performProcesses() tea.Cmd {
 	contentWidth := m.contentWidth
 	if contentWidth == 0 {
 		contentWidth = 80
 	}
 
 	return func() tea.Msg {
-		var buf bytes.Buffer
-		network.Netstat()
+		// Get results from network package
+		results := network.Processes()
 
-		rawResult := buf.String()
-		connections := parseNetstatOutput(rawResult)
-		formattedResult := formatNetstatResultPlain(connections, contentWidth-8)
+		// Convert results to our connection format
+		var connections []ProcessesConnection
+		for _, result := range results {
+			connections = append(connections, ProcessesConnection{
+				LocalAddr:  result.LocalAddr,
+				Port:       result.LocalPort,
+				PIDProgram: fmt.Sprintf("%s %d", result.Program, result.PID),
+			})
+		}
 
-		return netstatResultMsg{
+		// Format the results
+		formattedResult := formatProcessesResultPlain(connections, contentWidth-8)
+
+		return processesResultMsg{
 			result: formattedResult,
 			err:    nil,
 		}

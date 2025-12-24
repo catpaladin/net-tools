@@ -1,6 +1,9 @@
 package printers
 
-import "fmt"
+import (
+	"fmt"
+	"io"
+)
 
 // DNSResult represents the result of a DNS lookup
 type DNSResult struct {
@@ -12,57 +15,57 @@ type DNSResult struct {
 	TXTRecords  []string
 }
 
-// PrintDNSResult prints a DNS result with color formatting
-func PrintDNSResult(result DNSResult) {
+// PrintDNSResult prints a DNS result with color formatting to the given writer
+func PrintDNSResult(w io.Writer, result DNSResult) {
 	// Print A Records
 	if len(result.ARecords) > 0 {
-		fmt.Printf("%sA records for %s:\n", SuccessMsg("[Success] "), result.Domain)
+		fmt.Fprintf(w, "%sA records for %s:\n", SuccessMsg("[Success] "), result.Domain)
 		for _, ar := range result.ARecords {
-			fmt.Println(DataMsg(ar))
+			fmt.Fprintln(w, DataMsg(ar))
 		}
 	} else {
-		fmt.Printf("%sNo A records found for: %s\n", WarningMsg("[Warning] "), result.Domain)
+		fmt.Fprintf(w, "%sNo A records found for: %s\n", WarningMsg("[Warning] "), result.Domain)
 	}
-	fmt.Println()
+	fmt.Fprintln(w)
 
 	// Print MX Records
 	if len(result.MXRecords) > 0 {
-		fmt.Printf("%sMX records for %s:\n", SuccessMsg("[Success] "), result.Domain)
+		fmt.Fprintf(w, "%sMX records for %s:\n", SuccessMsg("[Success] "), result.Domain)
 		for _, mx := range result.MXRecords {
-			fmt.Println(DataMsg(mx))
+			fmt.Fprintln(w, DataMsg(mx))
 		}
 	} else {
-		fmt.Printf("%sNo MX records found for: %s\n", WarningMsg("[Warning] "), result.Domain)
+		fmt.Fprintf(w, "%sNo MX records found for: %s\n", WarningMsg("[Warning] "), result.Domain)
 	}
-	fmt.Println()
+	fmt.Fprintln(w)
 
 	// Print NS Records
 	if len(result.NSRecords) > 0 {
-		fmt.Printf("%sNS records for %s:\n", SuccessMsg("[Success] "), result.Domain)
+		fmt.Fprintf(w, "%sNS records for %s:\n", SuccessMsg("[Success] "), result.Domain)
 		for _, ns := range result.NSRecords {
-			fmt.Println(DataMsg(ns))
+			fmt.Fprintln(w, DataMsg(ns))
 		}
 	} else {
-		fmt.Printf("%sNo NS records found for: %s\n", WarningMsg("[Warning] "), result.Domain)
+		fmt.Fprintf(w, "%sNo NS records found for: %s\n", WarningMsg("[Warning] "), result.Domain)
 	}
-	fmt.Println()
+	fmt.Fprintln(w)
 
 	// Print CNAME Record
 	if result.CNAMERecord != "" {
-		fmt.Printf("%sCNAME record for %s:\n", SuccessMsg("[Success] "), result.Domain)
-		fmt.Println(DataMsg(result.CNAMERecord))
+		fmt.Fprintf(w, "%sCNAME record for %s:\n", SuccessMsg("[Success] "), result.Domain)
+		fmt.Fprintln(w, DataMsg(result.CNAMERecord))
 	} else {
-		fmt.Printf("%sNo CNAME found for %s\n", WarningMsg("[Warning] "), result.Domain)
+		fmt.Fprintf(w, "%sNo CNAME found for %s\n", WarningMsg("[Warning] "), result.Domain)
 	}
-	fmt.Println()
+	fmt.Fprintln(w)
 
 	// Print TXT Records
 	if len(result.TXTRecords) > 0 {
-		fmt.Printf("%sTXT records for %s:\n", SuccessMsg("[Success] "), result.Domain)
+		fmt.Fprintf(w, "%sTXT records for %s:\n", SuccessMsg("[Success] "), result.Domain)
 		for _, tx := range result.TXTRecords {
-			fmt.Println(DataMsg(tx))
+			fmt.Fprintln(w, DataMsg(tx))
 		}
 	} else {
-		fmt.Printf("%sNo TXT records found for: %s\n", WarningMsg("[Warning] "), result.Domain)
+		fmt.Fprintf(w, "%sNo TXT records found for: %s\n", WarningMsg("[Warning] "), result.Domain)
 	}
 }

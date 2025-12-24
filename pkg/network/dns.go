@@ -5,8 +5,8 @@ import (
 	"net"
 )
 
-// DigResult represents the result of a DNS lookup
-type DigResult struct {
+// DNSResult represents the result of a DNS lookup
+type DNSResult struct {
 	Domain      string
 	ARecords    []string
 	MXRecords   []string
@@ -15,18 +15,21 @@ type DigResult struct {
 	TXTRecords  []string
 }
 
-// Dig takes a domain and performs DNS queries, returning raw results
-func Dig(domain string) DigResult {
-	nh := NetHostLookup{}
+// DNS takes a domain and performs DNS queries, returning raw results
+func DNS(domain string) DNSResult {
+	return DNSWithLookup(domain, NetHostLookup{})
+}
 
+// DNSWithLookup performs DNS queries using the provided HostLookup
+func DNSWithLookup(domain string, lookup HostLookup) DNSResult {
 	// Perform all DNS lookups
-	result := DigResult{
+	result := DNSResult{
 		Domain:      domain,
-		ARecords:    lookupARecords(nh, domain),
-		MXRecords:   lookupMXRecords(nh, domain),
-		NSRecords:   lookupNSRecords(nh, domain),
-		CNAMERecord: lookupCNAMERecord(nh, domain),
-		TXTRecords:  lookupTXTRecords(nh, domain),
+		ARecords:    lookupARecords(lookup, domain),
+		MXRecords:   lookupMXRecords(lookup, domain),
+		NSRecords:   lookupNSRecords(lookup, domain),
+		CNAMERecord: lookupCNAMERecord(lookup, domain),
+		TXTRecords:  lookupTXTRecords(lookup, domain),
 	}
 
 	return result

@@ -3,6 +3,7 @@ package commands
 import (
 	"errors"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/catpaladin/net-tools/internal/printers"
@@ -11,31 +12,31 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// DigCommand creates and returns the dig cobra command
-func DigCommand() *cobra.Command {
+// DNSCommand creates and returns the dns cobra command
+func DNSCommand() *cobra.Command {
 	var domain string
 
-	digCmd := &cobra.Command{
-		Use:   "dig",
-		Short: "Performs DNS lookups like dig",
-		Long:  "Performs DNS lookups like dig",
+	dnsCmd := &cobra.Command{
+		Use:   "dns",
+		Short: "Performs DNS lookups for a given domain",
+		Long:  "Performs basic DNS lookups including A, MX, NS, CNAME, and TXT records.",
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) < 1 {
-				interactiveDig(&domain)
+				interactiveDNS(&domain)
 			} else {
 				domain = args[0]
 			}
 			// Get raw results from pkg/network
-			result := network.Dig(domain)
+			result := network.DNS(domain)
 			// Format and print using internal printers
-			printers.PrintDNSResult(printers.DNSResult(result))
+			printers.PrintDNSResult(os.Stdout, printers.DNSResult(result))
 		},
 	}
 
-	return digCmd
+	return dnsCmd
 }
 
-func interactiveDig(domain *string) {
+func interactiveDNS(domain *string) {
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().

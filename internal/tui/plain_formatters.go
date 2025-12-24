@@ -114,9 +114,9 @@ func formatIPResultPlain(ipType string, privateIP, publicIP string, privateErr, 
 	return strings.Join(lines, "\n")
 }
 
-func formatNetstatResultPlain(connections []NetstatConnection, availableWidth int) string {
+func formatProcessesResultPlain(connections []ProcessesConnection, availableWidth int) string {
 	if len(connections) == 0 {
-		return "No active network connections found"
+		return "No active network processes found"
 	}
 
 	if availableWidth < 40 {

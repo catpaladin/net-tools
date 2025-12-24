@@ -13,8 +13,8 @@ import (
 	"strings"
 )
 
-// NetstatResult represents a network connection
-type NetstatResult struct {
+// ProcessesResult represents a network connection
+type ProcessesResult struct {
 	LocalAddr string
 	LocalPort string
 	PID       int32
@@ -25,11 +25,11 @@ const (
 	listeningState = "0A"
 )
 
-// Netstat retrieves TCP connections and returns raw results
-func Netstat() []NetstatResult {
+// Processes retrieves TCP connections and returns raw results
+func Processes() []ProcessesResult {
 	files := []string{"/proc/net/tcp", "/proc/net/tcp6"}
 
-	var results []NetstatResult
+	var results []ProcessesResult
 	for _, filePath := range files {
 		file, err := os.Open(filePath)
 		if err != nil {
@@ -52,7 +52,7 @@ func Netstat() []NetstatResult {
 			if len(program) > 12 {
 				program = program[:12]
 			}
-			results = append(results, NetstatResult{
+			results = append(results, ProcessesResult{
 				LocalAddr: localAddr,
 				LocalPort: localPort,
 				PID:       int32(pid),

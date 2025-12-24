@@ -13,18 +13,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NCCmd creates and returns the nc cobra command
-func NCCmd() *cobra.Command {
+// PortCmd creates and returns the port cobra command
+func PortCmd() *cobra.Command {
 	var host string
 	var port string
 
-	ncCmd := &cobra.Command{
-		Use:   "nc",
-		Short: "Netcat subcommand to test host and port to see if open",
-		Long:  "Netcat subcommand to test host and port to see if open",
+	portCmd := &cobra.Command{
+		Use:   "port",
+		Short: "Tests if a host and port are open",
+		Long:  "Tests network connectivity to a specific host and port to see if it's accepting connections.",
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) < 2 {
-				interactiveNetcat(&host, &port)
+				interactivePort(&host, &port)
 			} else {
 				host = args[0]
 				port = args[1]
@@ -40,10 +40,10 @@ func NCCmd() *cobra.Command {
 		},
 	}
 
-	return ncCmd
+	return portCmd
 }
 
-func interactiveNetcat(host, port *string) {
+func interactivePort(host, port *string) {
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().

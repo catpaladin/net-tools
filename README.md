@@ -15,7 +15,7 @@ quick network diagnostics.
 
 ### 🔌 Port Connectivity Testing
 
-- Test TCP port connectivity (netcat-like functionality)
+- Test TCP port connectivity
 - Connection status validation with detailed error reporting
 - Support for any host and port combination
 
@@ -25,7 +25,7 @@ quick network diagnostics.
 - Retrieve your public IP address
 - Display both private and public IPs simultaneously
 
-### 📊 Network Connections (Netstat)
+### 📊 Network Connections (Processes)
 
 - List active network connections
 - Display local addresses, ports, and associated processes
@@ -48,7 +48,7 @@ quick network diagnostics.
 go install github.com/catpaladin/net-tools/cmd/net-tools@latest
 
 # Install net-tui TUI
-go install github.com/catpaladin/net-tools/cmd/net-tui@latest
+go install github.com/catpaladin/net-tui@latest
 ```
 
 ### Install via Script
@@ -87,23 +87,23 @@ make build-darwin-universal
 
 ```bash
 # Look up all DNS records for a domain
-net-tools dig example.com
+net-tools dns example.com
 
 # Examples
-net-tools dig google.com
-net-tools dig github.com
+net-tools dns google.com
+net-tools dns github.com
 ```
 
 #### Port Connectivity Test
 
 ```bash
 # Test if a port is open on a host
-net-tools nc <host> <port>
+net-tools port <host> <port>
 
 # Examples
-net-tools nc google.com 80
-net-tools nc localhost 3000
-net-tools nc 192.168.1.1 22
+net-tools port google.com 80
+net-tools port localhost 3000
+net-tools port 192.168.1.1 22
 ```
 
 #### IP Address Information
@@ -126,7 +126,7 @@ net-tools ip -t both
 
 ```bash
 # List all active network connections
-net-tools netstat
+net-tools processes
 ```
 
 ### net-tui (Terminal User Interface)
@@ -151,7 +151,7 @@ The TUI provides:
 ### DNS Lookup Example
 
 ```bash
-$ net-tools dig example.com
+$ net-tools dns example.com
 
 🔍 DNS Lookup Results for example.com
 
@@ -175,7 +175,7 @@ TXT Records:
 ### Port Test Example
 
 ```bash
-$ net-tools nc google.com 80
+$ net-tools port google.com 80
 
 🔌 Port Connectivity Test
 
