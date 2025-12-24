@@ -13,11 +13,9 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         with:
           release-type: go
-          package-name: net-tools
-          # Configure to handle conventional commits with emojis
           config-file: .github/release-please-config.json
           # Ensure we fetch all history for proper commit parsing
           fetch-depth: 0
