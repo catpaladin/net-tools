@@ -19,21 +19,21 @@ type Tab struct {
 
 // MainModel represents the main TUI model with tabs
 type MainModel struct {
-	tabs         []Tab
-	activeTab    int
-	width        int
-	height       int
-	contentWidth int
-	ready        bool
-	digModel     *DigModel
-	ncModel      *NetcatModel
-	ipModel      *IPModel
-	netstatModel *NetstatModel
-	spinner      spinner.Model
+	tabs           []Tab
+	activeTab      int
+	width          int
+	height         int
+	contentWidth   int
+	ready          bool
+	dnsModel       *DNSModel
+	portModel      *PortModel
+	ipModel        *IPModel
+	processesModel *ProcessesModel
+	spinner        spinner.Model
 }
 
-// DigModel represents the DNS lookup tab
-type DigModel struct {
+// DNSModel represents the DNS lookup tab
+type DNSModel struct {
 	domainInput textinput.Model
 	result      string
 	loading     bool
@@ -41,8 +41,8 @@ type DigModel struct {
 	viewport    viewport.Model
 }
 
-// NetcatModel represents the port testing tab
-type NetcatModel struct {
+// PortModel represents the port testing tab
+type PortModel struct {
 	hostInput textinput.Model
 	portInput textinput.Model
 	result    string
@@ -62,32 +62,32 @@ type IPModel struct {
 	viewport viewport.Model
 }
 
-// NetstatConnection represents a single network connection
-type NetstatConnection struct {
+// ProcessesConnection represents a single network connection
+type ProcessesConnection struct {
 	LocalAddr  string
 	Port       string
 	PIDProgram string
 }
 
-// NetstatModel represents the netstat tab
-type NetstatModel struct {
+// ProcessesModel represents the processes tab
+type ProcessesModel struct {
 	result      string
 	loading     bool
 	error       string
-	connections []NetstatConnection
+	connections []ProcessesConnection
 	viewport    viewport.Model
 }
 
 // Key bindings
 type keyMap struct {
-	Up     key.Binding
-	Down   key.Binding
-	Left   key.Binding
-	Right  key.Binding
-	Enter  key.Binding
-	Tab    key.Binding
-	Escape key.Binding
-	Quit   key.Binding
+	Up    key.Binding
+	Down  key.Binding
+	Left  key.Binding
+	Right key.Binding
+	Enter key.Binding
+	Tab   key.Binding
+	Clear key.Binding
+	Quit  key.Binding
 }
 
 var keys = keyMap{
@@ -115,9 +115,9 @@ var keys = keyMap{
 		key.WithKeys("tab"),
 		key.WithHelp("tab", "next field"),
 	),
-	Escape: key.NewBinding(
+	Clear: key.NewBinding(
 		key.WithKeys("esc"),
-		key.WithHelp("esc", "back"),
+		key.WithHelp("esc", "clear"),
 	),
 	Quit: key.NewBinding(
 		key.WithKeys("q", "ctrl+c"),
@@ -125,157 +125,155 @@ var keys = keyMap{
 	),
 }
 
-// Color palette for consistent theming
+// Modern color palette for consistent theming
 var (
-	// Primary colors
-	primaryColor   = lipgloss.Color("39")  // Bright blue
-	secondaryColor = lipgloss.Color("205") // Bright magenta
-	accentColor    = lipgloss.Color("46")  // Bright green
+	// Primary colors - modern dark theme
+	primaryColor   = lipgloss.Color("39")  // Bright blue accent
+	secondaryColor = lipgloss.Color("69")  // Soft cyan
+	accentColor    = lipgloss.Color("207") // Modern Purple/Pink accent
 	errorColor     = lipgloss.Color("196") // Bright red
-	warningColor   = lipgloss.Color("214") // Orange
-	mutedColor     = lipgloss.Color("240") // Gray
-	borderColor    = lipgloss.Color("62")  // Dark blue
+	warningColor   = lipgloss.Color("208") // Modern orange
+	successColor   = lipgloss.Color("40")  // Success green
+	mutedColor     = lipgloss.Color("242") // Light gray
+	borderColor    = lipgloss.Color("63")  // Deep indigo border
+	subtleColor    = lipgloss.Color("236") // Dark surface color
+	highlightColor = lipgloss.Color("255") // Pure white for emphasis
+	bgColor        = lipgloss.Color("233") // Deep background
 )
 
 // Unified styles for consistent appearance
 var (
-	// Tab styles
+	// Main container that fills the window
+	appStyle = lipgloss.NewStyle().
+			Background(bgColor).
+			Foreground(lipgloss.Color("252"))
+
+	// Modern rounded tab styles (pill-shaped) - ensure background matches app
 	activeTabStyle = lipgloss.NewStyle().
-			Foreground(primaryColor).
-			Background(lipgloss.Color("235")).
+			Foreground(lipgloss.Color("255")).
+			Background(primaryColor).
 			Bold(true).
-			Padding(0, 3).
-			Margin(0, 1).
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(primaryColor).
-			BorderTop(true).
-			BorderRight(true).
-			BorderLeft(true).
-			BorderBottom(false)
+			Padding(0, 2).
+			MarginRight(1).
+			Height(1)
 
 	inactiveTabStyle = lipgloss.NewStyle().
 				Foreground(mutedColor).
-				Padding(0, 3).
-				Margin(0, 1).
-				Border(lipgloss.RoundedBorder()).
-				BorderForeground(mutedColor).
-				BorderTop(true).
-				BorderRight(true).
-				BorderLeft(true).
-				BorderBottom(false)
+				Background(subtleColor).
+				Padding(0, 2).
+				MarginRight(1).
+				Height(1)
 
-	// Content styles
-	tabContentStyle = lipgloss.NewStyle().
-			Padding(2, 3).
-			Margin(1, 0).
+	// Modern content styles with subtle background layering
+	tabOuterStyle = lipgloss.NewStyle().
+			Padding(1, 2).
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(borderColor)
+			BorderForeground(subtleColor).
+			Background(lipgloss.Color("234"))
 
-	// Header styles
+	// Modern header styles - ensure background matches container
 	headerStyle = lipgloss.NewStyle().
 			Foreground(primaryColor).
+			Background(lipgloss.Color("234")).
 			Bold(true).
-			MarginBottom(1).
 			Padding(0, 1).
-			Border(lipgloss.NormalBorder()).
-			BorderBottom(true).
-			BorderForeground(primaryColor)
+			MarginBottom(1)
 
-	// Input container styles (for layout only)
-	inputContainerStyle = lipgloss.NewStyle().
-				MarginBottom(1)
+	// Modern label styles - ensure background matches container
+	labelStyle = lipgloss.NewStyle().
+			Foreground(secondaryColor).
+			Background(lipgloss.Color("234")).
+			Bold(true).
+			Width(10).
+			MarginRight(1)
 
-	// Textinput prompt styles (applied directly to textinput)
+	// Text input background should also match container
 	focusedPromptStyle = lipgloss.NewStyle().
 				Foreground(primaryColor).
+				Background(lipgloss.Color("234")).
 				Bold(true)
 
 	unfocusedPromptStyle = lipgloss.NewStyle().
-				Foreground(mutedColor)
+				Foreground(mutedColor).
+				Background(lipgloss.Color("234"))
 
-	// Textinput text styles
 	focusedTextStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("255")) // White text
+				Foreground(highlightColor).
+				Background(lipgloss.Color("234"))
 
 	unfocusedTextStyle = lipgloss.NewStyle().
-				Foreground(mutedColor)
+				Foreground(mutedColor).
+				Background(lipgloss.Color("234"))
 
-	// Textinput cursor style
 	cursorStyle = lipgloss.NewStyle().
-			Foreground(primaryColor)
+			Foreground(primaryColor).
+			Background(lipgloss.Color("234"))
 
-	// Label styles
-	labelStyle = lipgloss.NewStyle().
-			Foreground(secondaryColor).
+	// Enhanced status styles with block backgrounds
+	successBlockStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("255")).
+				Background(successColor).
+				Bold(true).
+				Padding(0, 1).
+				MarginRight(1)
+
+	errorBlockStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("255")).
+			Background(errorColor).
 			Bold(true).
+			Padding(0, 1).
 			MarginRight(1)
 
-	// Status styles
-	successStyle = lipgloss.NewStyle().
-			Foreground(accentColor).
-			Bold(true).
-			Padding(0, 1).
-			Margin(1, 0)
-
-	errorStyle = lipgloss.NewStyle().
-			Foreground(errorColor).
-			Bold(true).
-			Padding(0, 1).
-			Margin(1, 0)
-
-	loadingStyle = lipgloss.NewStyle().
-			Foreground(warningColor).
-			Bold(true).
-			Padding(0, 1).
-			Margin(1, 0)
-
-	// Result styles
-	resultHeaderStyle = lipgloss.NewStyle().
-				Foreground(accentColor).
+	loadingBlockStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("255")).
+				Background(warningColor).
 				Bold(true).
-				MarginTop(1).
-				MarginBottom(1)
+				Padding(0, 1).
+				MarginRight(1)
 
+	// Enhanced result styles with specialized background
 	resultContentStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("252")).
-				Padding(1).
-				Margin(0, 1).
+				Padding(1, 2).
 				Border(lipgloss.RoundedBorder()).
-				BorderForeground(mutedColor).
+				BorderForeground(subtleColor).
 				Background(lipgloss.Color("235"))
 
-	// IP type display style
-	ipTypeDisplayStyle = lipgloss.NewStyle().
-				Foreground(primaryColor).
-				Bold(true).
-				Padding(0, 2).
-				Border(lipgloss.RoundedBorder()).
-				BorderForeground(primaryColor)
-
-	// Help styles
+	// Modern help styles with clean bar appearance
 	helpStyle = lipgloss.NewStyle().
 			Foreground(mutedColor).
-			Italic(true).
-			MarginTop(2).
-			Align(lipgloss.Center)
+			Background(bgColor).
+			Padding(0, 2).
+			Height(1)
 
+	helpKeyStyle = lipgloss.NewStyle().
+			Foreground(secondaryColor).
+			Background(bgColor).
+			Bold(true)
+
+	// Enhanced title style with gradient effect and modern framing
 	titleStyle = lipgloss.NewStyle().
 			Foreground(primaryColor).
+			Background(bgColor).
 			Bold(true).
-			Align(lipgloss.Center).
+			Padding(0, 2).
 			MarginBottom(1).
-			Padding(1, 2).
-			Border(lipgloss.DoubleBorder()).
+			Border(lipgloss.NormalBorder(), false, false, true, false).
 			BorderForeground(primaryColor)
+
+	// Styling for info text
+	infoStyle = lipgloss.NewStyle().
+			Foreground(mutedColor).
+			Background(lipgloss.Color("234"))
 )
 
 // Messages for async operations
-type digResultMsg struct {
+type dnsResultMsg struct {
 	result string
 	err    error
 }
 
-type netcatResultMsg struct {
+type portResultMsg struct {
 	result string
 	err    error
 }
@@ -285,7 +283,7 @@ type ipResultMsg struct {
 	err    error
 }
 
-type netstatResultMsg struct {
+type processesResultMsg struct {
 	result string
 	err    error
 }

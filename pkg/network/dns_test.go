@@ -166,3 +166,32 @@ func TestLookupTXTRecords(t *testing.T) {
 		})
 	}
 }
+
+func TestDNSWithLookup(t *testing.T) {
+	mockLookup := MockHostLookup{
+		LookupHostFunc: func(domain string) ([]string, error) {
+			return []string{"1.2.3.4"}, nil
+		},
+		LookupMXFunc: func(domain string) ([]*net.MX, error) {
+			return []*net.MX{{Host: "mail.example.com.", Pref: 10}}, nil
+		},
+		LookupNSFunc: func(domain string) ([]*net.NS, error) {
+			return []*net.NS{{Host: "ns1.example.com."}}, nil
+		},
+		LookupCNAMEFunc: func(domain string) (string, error) {
+			return "alias.example.com.", nil
+		},
+		LookupTXTFunc: func(domain string) ([]string, error) {
+			return []string{"v=spf1"}, nil
+		},
+	}
+
+	result := DNSWithLookup("example.com", mockLookup)
+
+	assert.Equal(t, "example.com", result.Domain)
+	assert.Equal(t, []string{"1.2.3.4"}, result.ARecords)
+	assert.Equal(t, []string{"mail.example.com. 10\n"}, result.MXRecords)
+	assert.Equal(t, []string{"ns1.example.com."}, result.NSRecords)
+	assert.Equal(t, "alias.example.com.", result.CNAMERecord)
+	assert.Equal(t, []string{"v=spf1"}, result.TXTRecords)
+}

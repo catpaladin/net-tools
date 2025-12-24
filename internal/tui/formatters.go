@@ -21,6 +21,8 @@ var (
 	recordTypeStyle = lipgloss.NewStyle().
 			Foreground(primaryColor).
 			Bold(true).
+			Padding(0, 1).
+			Background(subtleColor).
 			MarginBottom(1)
 
 	recordValueStyle = lipgloss.NewStyle().
@@ -33,9 +35,10 @@ var (
 				MarginLeft(2)
 
 	tableHeaderStyle = lipgloss.NewStyle().
-				Foreground(primaryColor).
+				Foreground(lipgloss.Color("255")).
+				Background(borderColor).
 				Bold(true).
-				Underline(true)
+				Padding(0, 1)
 
 	tableRowStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("252"))
@@ -50,7 +53,7 @@ var (
 			Bold(true)
 
 	connectionSuccessStyle = lipgloss.NewStyle().
-				Foreground(accentColor).
+				Foreground(successColor).
 				Bold(true)
 
 	connectionFailStyle = lipgloss.NewStyle().
@@ -58,7 +61,7 @@ var (
 				Bold(true)
 )
 
-func performDigLookup(domain string) DNSResult {
+func performDNSLookup(domain string) DNSResult {
 	nh := network.NetHostLookup{}
 
 	var result DNSResult
@@ -239,9 +242,9 @@ func formatIPResult(ipType string, privateIP, publicIP string, privateErr, publi
 	return strings.Join(lines, "\n")
 }
 
-func parseNetstatOutput(rawOutput string) []NetstatConnection {
+func parseProcessesOutput(rawOutput string) []ProcessesConnection {
 	lines := strings.Split(rawOutput, "\n")
-	var connections []NetstatConnection
+	var connections []ProcessesConnection
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
@@ -251,7 +254,7 @@ func parseNetstatOutput(rawOutput string) []NetstatConnection {
 
 		parts := strings.Fields(line)
 		if len(parts) >= 3 {
-			conn := NetstatConnection{
+			conn := ProcessesConnection{
 				LocalAddr:  parts[0],
 				Port:       parts[1],
 				PIDProgram: strings.Join(parts[2:], " "),
@@ -268,9 +271,9 @@ func parseNetstatOutput(rawOutput string) []NetstatConnection {
 	return connections
 }
 
-func formatNetstatResult(connections []NetstatConnection, availableWidth int) string {
+func formatProcessesResult(connections []ProcessesConnection, availableWidth int) string {
 	if len(connections) == 0 {
-		return recordEmptyStyle.Render("No active network connections found")
+		return recordEmptyStyle.Render("No active network processes found")
 	}
 
 	if availableWidth < 40 {
@@ -338,17 +341,9 @@ func formatNetstatResult(connections []NetstatConnection, availableWidth int) st
 
 	var tableContent strings.Builder
 
-	headerLine := fmt.Sprintf("%-*s %-*s %-*s", addrWidth, addrHeader, portWidth, portHeader, pidWidth, pidHeader)
+	headerLine := fmt.Sprintf("%-*s %-*s %-*s", addrWidth, tableHeaderStyle.Render(addrHeader), portWidth, tableHeaderStyle.Render(portHeader), pidWidth, tableHeaderStyle.Render(pidHeader))
 	tableContent.WriteString(headerLine)
-	tableContent.WriteString("\n")
-
-	separatorWidth := addrWidth + portWidth + pidWidth + 2
-	if separatorWidth > tableWidth {
-		separatorWidth = tableWidth
-	}
-	separator := strings.Repeat("─", separatorWidth)
-	tableContent.WriteString(separator)
-	tableContent.WriteString("\n")
+	tableContent.WriteString("\n\n")
 
 	for _, conn := range connections {
 		addr := conn.LocalAddr
@@ -373,9 +368,8 @@ func formatNetstatResult(connections []NetstatConnection, availableWidth int) st
 	styledTable := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("252")).
 		Padding(1).
-		Margin(0, 1).
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(borderColor).
+		BorderForeground(subtleColor).
 		Render(strings.TrimSpace(tableContent.String()))
 
 	content.WriteString(styledTable)

@@ -2,9 +2,9 @@ name: "Go Test"
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   go-test:
@@ -16,11 +16,12 @@ jobs:
 
       - uses: actions/setup-go@v3
         with:
-          go-version: '1.24'
+          go-version: "1.25.1"
           cache: true
 
       - name: Install dependencies
-        run: go get .
+        run: go mod download
 
       - name: Run tests
         run: go test -cover ./...
+

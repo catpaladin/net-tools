@@ -1,61 +1,48 @@
-package cmd
+package commands
 
 import (
-	"fmt"
 	"log"
+	"os"
 
+	"github.com/catpaladin/net-tools/internal/printers"
 	"github.com/catpaladin/net-tools/pkg/network"
 	"github.com/charmbracelet/huh"
-
 	"github.com/spf13/cobra"
 )
 
-var (
-	ipType string
+// IPCmd creates and returns the ip cobra command
+func IPCmd() *cobra.Command {
+	var ipType string
 
-	// ipCmd represents the ip command
-	ipCmd = &cobra.Command{
+	ipCmd := &cobra.Command{
 		Use:   "ip",
 		Short: "Used to get the public or private IP address of the host",
 		Long:  "Used to get the public or private IP address of the host",
 		Run: func(cmd *cobra.Command, args []string) {
 			if ipType == "" {
-				interactiveIP()
+				interactiveIP(&ipType)
 			}
 			// Find IP
 			switch ipType {
 			case "both":
 				privateIP, err := network.GetIP("private")
-				if err != nil {
-					fmt.Printf("%s Error getting %s IP: %v\n", errorMsg("[Error]"), ipType, err)
-				} else {
-					fmt.Printf("%s Private IP: %s\n", successMsg("[Success]"), dataMsg(privateIP))
-				}
+				printers.PrintIPResult(os.Stdout, "Private", privateIP, err)
+
 				publicIP, err := network.GetIP("public")
-				if err != nil {
-					fmt.Printf("%s Error getting %s IP: %v\n", errorMsg("[Error]"), ipType, err)
-				} else {
-					fmt.Printf("%s Public IP: %s\n", successMsg("[Success]"), dataMsg(publicIP))
-				}
+				printers.PrintIPResult(os.Stdout, "Public", publicIP, err)
 			default:
 				ip, err := network.GetIP(ipType)
-				if err != nil {
-					fmt.Printf("%s Error getting %s IP: %v\n", errorMsg("[Error]"), ipType, err)
-				} else {
-					fmt.Printf("%s %s IP: %s\n", successMsg("[Success]"), ipType, dataMsg(ip))
-				}
+				printers.PrintIPResult(os.Stdout, ipType, ip, err)
 			}
 		},
 	}
-)
-
-func init() {
-	rootCmd.AddCommand(ipCmd)
 
 	ipCmd.PersistentFlags().StringVarP(&ipType, "type", "t", "", "public|private|both")
+
+	return ipCmd
 }
 
-func interactiveIP() {
+func interactiveIP(ipType *string) {
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().
@@ -65,7 +52,7 @@ func interactiveIP() {
 					huh.NewOption("Private", "private"),
 					huh.NewOption("Public", "public"),
 				).
-				Value(&ipType),
+				Value(ipType),
 		),
 	)
 	err := form.Run()

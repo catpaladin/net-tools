@@ -1,2 +1,7 @@
 nt
 net-tools
+!cmd/net-tools
+net-tui
+!cmd/net-tui
+bin**
+coverage*
