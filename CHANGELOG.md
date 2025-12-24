@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/catpaladin/net-tools/compare/v1.1.0...v1.1.1) (2025-12-24)
+
+
+### Bug Fixes
+
+* update to use non-deprecated version of action ([41da8ea](https://github.com/catpaladin/net-tools/commit/41da8ead8f1d8edad27831100ba53b54f23220d2))
+
 ## [1.1.0](https://github.com/catpaladin/net-tools/compare/v1.0.0...v1.1.0) (2025-08-17)
 
 
