@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/catpaladin/net-tools/compare/v1.1.1...v1.2.0) (2025-12-25)
+
+
+### Features
+
+* trigger build of latest chore commits that weren't picked up ([2d9b432](https://github.com/catpaladin/net-tools/commit/2d9b4321630aac1a33a0bd3c1b3e07e734c2b47b))
+
 ## [1.1.1](https://github.com/catpaladin/net-tools/compare/v1.1.0...v1.1.1) (2025-12-24)
 
 
