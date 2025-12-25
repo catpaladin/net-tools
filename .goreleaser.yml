@@ -1,3 +1,8 @@
+version: 2
+before:
+  hooks:
+    - go mod download
+
 builds:
   - id: net-tools
     main: ./cmd/net-tools
@@ -10,9 +15,10 @@ builds:
     goarch:
       - amd64
       - arm64
+    goarm: [6, 7]
     env:
       - CGO_ENABLED=0
-  
+
   - id: net-tui
     main: ./cmd/net-tui
     binary: net-tui
@@ -24,11 +30,48 @@ builds:
     goarch:
       - amd64
       - arm64
+    goarm: [6, 7]
     env:
       - CGO_ENABLED=0
 
+archives:
+  - id: net-tools-archive
+    name_template: |-
+      net-tools_{{ .Tag }}_{{ .Os }}_
+      {{- with .Arch -}}
+        {{- if (eq . "386") -}}i386
+        {{- else if (eq . "amd64") -}}x86_64
+        {{- else -}}{{- . -}}
+        {{- end -}} 
+      {{ end }}
+      {{- with .Arm -}}
+        {{- if (eq . "6") -}}hf
+        {{- else -}}v{{- . -}}
+        {{- end -}}
+      {{- end -}}
+    builds:
+      - net-tools
+    files: ["LICENSE"]
+
+  - id: net-tui-archive
+    name_template: |-
+      net-tui_{{ .Tag }}_{{ .Os }}_
+      {{- with .Arch -}}
+        {{- if (eq . "386") -}}i386
+        {{- else if (eq . "amd64") -}}x86_64
+        {{- else -}}{{- . -}}
+        {{- end -}} 
+      {{ end }}
+      {{- with .Arm -}}
+        {{- if (eq . "6") -}}hf
+        {{- else -}}v{{- . -}}
+        {{- end -}}
+      {{- end -}}
+    builds:
+      - net-tui
+    files: ["LICENSE"]
+
 release:
-  prerelease: auto
   mode: append
 
 universal_binaries:
@@ -36,3 +79,4 @@ universal_binaries:
 
 checksum:
   name_template: "checksums.txt"
+  algorithm: sha256
