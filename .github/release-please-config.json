@@ -2,6 +2,7 @@
   "release-please": {
     "release-type": "go",
     "package-name": "net-tools",
+    "release-as": "latest",
     "changelog-sections": [
       {
         "type": "feat",
@@ -56,14 +57,9 @@
     ],
     "commit-parse": {
       "header-pattern": "^(?:\\[(?<scope>.+)\\]\\s*)?(?<type>\\w+)(?:\\((?<subtype>.+)\\))?!?:\\s*(?<subject>.+)$",
-      "header-correspondence": [
-        "type",
-        "scope",
-        "subject"
-      ],
-      "note-keywords": [
-        "BREAKING CHANGE"
-      ]
+      "header-correspondence": ["type", "scope", "subject"],
+      "note-keywords": ["BREAKING CHANGE"]
     }
   }
 }
+
