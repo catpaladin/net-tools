@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/catpaladin/net-tools/compare/v1.2.0...v1.2.1) (2025-12-25)
+
+
+### Bug Fixes
+
+* updated gha workflows with correct values (not sure how worked before) ([8436c1a](https://github.com/catpaladin/net-tools/commit/8436c1a4444259bcfde3d87c0d670f712a56f381))
+
 ## [1.2.0](https://github.com/catpaladin/net-tools/compare/v1.1.1...v1.2.0) (2025-12-25)
 
 
