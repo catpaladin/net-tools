@@ -49,7 +49,7 @@ archives:
         {{- else -}}v{{- . -}}
         {{- end -}}
       {{- end -}}
-    builds:
+    ids:
       - net-tools
     files: ["LICENSE"]
 
@@ -67,7 +67,7 @@ archives:
         {{- else -}}v{{- . -}}
         {{- end -}}
       {{- end -}}
-    builds:
+    ids:
       - net-tui
     files: ["LICENSE"]
 
