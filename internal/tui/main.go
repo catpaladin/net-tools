@@ -103,34 +103,17 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		m.contentWidth = msg.Width - 4
 
-		// Content width is slightly less than window width for margins
-		m.contentWidth = msg.Width - 6
-		if m.contentWidth < 60 {
-			m.contentWidth = 60
-		}
+		inputWidth := m.contentWidth - 8
+		m.dnsModel.viewport.Width = m.contentWidth - 10
+		m.portModel.viewport.Width = m.contentWidth - 10
+		m.ipModel.viewport.Width = m.contentWidth - 10
+		m.processesModel.viewport.Width = m.contentWidth - 10
 
-		// Header area: Title (2) + Tabs (2) + Spacing (2) = 6
-		// Footer area: Help (2) = 2
-		// Padding/Margins: Content Padding (2) + Margins (2) = 4
-		overhead := 12
-
-		availableHeight := m.height - overhead
-		if availableHeight < 10 {
-			availableHeight = 10
-		}
-
-		// Adjust viewport sizes
-		viewWidth := m.contentWidth - 4 // Account for container padding
-
-		m.dnsModel.viewport.Width = viewWidth
-		m.dnsModel.viewport.Height = availableHeight
-		m.portModel.viewport.Width = viewWidth
-		m.portModel.viewport.Height = availableHeight
-		m.ipModel.viewport.Width = viewWidth
-		m.ipModel.viewport.Height = availableHeight
-		m.processesModel.viewport.Width = viewWidth
-		m.processesModel.viewport.Height = availableHeight
+		m.dnsModel.domainInput.Width = inputWidth
+		m.portModel.hostInput.Width = inputWidth
+		m.portModel.portInput.Width = 10
 
 		m.ready = true
 
@@ -235,10 +218,8 @@ func (m MainModel) View() string {
 		return "Initializing..."
 	}
 
-	// Render Title
-	title := titleStyle.Width(m.contentWidth).Render("NET-TOOLS")
+	title := titleStyle.Render("NET-TOOLS")
 
-	// Render Tabs
 	tabs := make([]string, len(m.tabs))
 	for i, tab := range m.tabs {
 		if tab.Active {
@@ -249,7 +230,6 @@ func (m MainModel) View() string {
 	}
 	tabBar := lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
 
-	// Render Content
 	var content string
 	switch m.activeTab {
 	case 0:
@@ -262,30 +242,11 @@ func (m MainModel) View() string {
 		content = m.renderProcessesTab()
 	}
 
-	contentBox := tabOuterStyle.
-		Width(m.contentWidth).
-		Height(m.height - 14). // More cushion for scaling
-		Render(content)
-
-	// Render Help
 	help := m.renderHelp()
 
-	// Join all parts vertically and center them
-	ui := lipgloss.JoinVertical(lipgloss.Center,
-		title,
-		tabBar,
-		contentBox,
-		help,
-	)
+	ui := lipgloss.JoinVertical(lipgloss.Left, title, tabBar, content, help)
 
-	// Fill the screen and center the UI
-	view := lipgloss.Place(m.width, m.height,
-		lipgloss.Center, lipgloss.Center,
-		ui,
-		lipgloss.WithWhitespaceBackground(bgColor),
-	)
-
-	return appStyle.Render(view)
+	return appStyle.Render(ui)
 }
 
 func (m MainModel) renderHelp() string {
@@ -302,7 +263,9 @@ func (m MainModel) renderHelp() string {
 
 	var helpParts []string
 	for _, k := range keys {
-		part := fmt.Sprintf("%s %s", helpKeyStyle.Render(k.key), k.desc)
+		helpKey := helpKeyStyle.Background(bgColor).Render(k.key)
+		helpValue := helpValueStyle.Background(bgColor).Render(k.desc)
+		part := fmt.Sprintf("%s %s", helpKey, helpValue)
 		helpParts = append(helpParts, part)
 	}
 
@@ -334,25 +297,22 @@ func (m MainModel) handleEnter() (tea.Model, tea.Cmd) {
 func (m MainModel) renderDNSTab() string {
 	var content strings.Builder
 
-	content.WriteString(headerStyle.Render("🔍 DNS LOOKUP"))
-	content.WriteString("\n\n")
+	content.WriteString(headerStyle.Width(m.contentWidth - 2).Render("🔍 DNS LOOKUP"))
 
-	// Domain Input Row - Wrap in a style that fills background
-	inputRow := lipgloss.JoinHorizontal(lipgloss.Center,
+	inputRow := inputRowStyle.Width(m.contentWidth - 6).Render(lipgloss.JoinHorizontal(lipgloss.Left,
 		labelStyle.Render("Domain: "),
 		m.dnsModel.domainInput.View(),
-	)
-	content.WriteString(inputRow + "\n\n")
+	))
+	content.WriteString(inputRow)
 
 	if m.dnsModel.loading {
-		content.WriteString(loadingBlockStyle.Render(" BUSY ") + " Looking up records...")
+		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(loadingBlockStyle.Render(" ⟳ ") + " Looking up records..."))
 	} else if m.dnsModel.error != "" {
-		content.WriteString(errorBlockStyle.Render(" ERROR ") + " " + m.dnsModel.error)
+		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(errorBlockStyle.Render(" ❌ ") + " " + m.dnsModel.error))
 	} else if m.dnsModel.result != "" {
-		content.WriteString(successBlockStyle.Render(" DONE ") + " DNS Records Found:\n\n")
-		content.WriteString(m.dnsModel.viewport.View())
-	} else {
-		content.WriteString(infoStyle.Render("Enter a domain name and press Enter"))
+		header := successBlockStyle.Render(" ✓ ") + " DNS Records Found:\n\n"
+		resultContent := header + m.dnsModel.viewport.View()
+		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(resultContent))
 	}
 
 	return content.String()
@@ -361,32 +321,26 @@ func (m MainModel) renderDNSTab() string {
 func (m MainModel) renderPortTab() string {
 	var content strings.Builder
 
-	content.WriteString(headerStyle.Render("🔌 PORT CONNECTIVITY"))
-	content.WriteString("\n\n")
+	content.WriteString(headerStyle.Width(m.contentWidth - 2).Render("🔌 PORT CONNECTIVITY"))
 
-	// Host Input Row
-	content.WriteString(lipgloss.JoinHorizontal(lipgloss.Center,
+	content.WriteString(inputRowStyle.Width(m.contentWidth - 6).Render(lipgloss.JoinHorizontal(lipgloss.Left,
 		labelStyle.Render("Host: "),
 		m.portModel.hostInput.View(),
-	))
-	content.WriteString("\n")
+	)))
 
-	// Port Input Row
-	content.WriteString(lipgloss.JoinHorizontal(lipgloss.Center,
+	content.WriteString(inputRowStyle.Width(m.contentWidth - 6).Render(lipgloss.JoinHorizontal(lipgloss.Left,
 		labelStyle.Render("Port: "),
 		m.portModel.portInput.View(),
-	))
-	content.WriteString("\n\n")
+	)))
 
 	if m.portModel.loading {
-		content.WriteString(loadingBlockStyle.Render(" BUSY ") + " Testing connection...")
+		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(loadingBlockStyle.Render(" ⟳ ") + " Testing connection..."))
 	} else if m.portModel.error != "" {
-		content.WriteString(errorBlockStyle.Render(" FAIL ") + " " + m.portModel.error)
+		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(errorBlockStyle.Render(" ❌ ") + " " + m.portModel.error))
 	} else if m.portModel.result != "" {
-		content.WriteString(successBlockStyle.Render(" OPEN ") + " Connection successful:\n\n")
-		content.WriteString(m.portModel.viewport.View())
-	} else {
-		content.WriteString(infoStyle.Render("Enter host and port, then press Enter"))
+		header := successBlockStyle.Render(" ✓ ") + " Connection successful:\n\n"
+		resultContent := header + m.portModel.viewport.View()
+		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(resultContent))
 	}
 
 	return content.String()
@@ -395,25 +349,21 @@ func (m MainModel) renderPortTab() string {
 func (m MainModel) renderIPTab() string {
 	var content strings.Builder
 
-	content.WriteString(headerStyle.Render("🌐 IP INFORMATION"))
-	content.WriteString("\n\n")
+	content.WriteString(headerStyle.Width(m.contentWidth - 2).Render("🌐 IP INFORMATION"))
 
-	// IP Type Selection
-	content.WriteString(lipgloss.JoinHorizontal(lipgloss.Center,
+	content.WriteString(inputRowStyle.Width(m.contentWidth - 6).Render(lipgloss.JoinHorizontal(lipgloss.Left,
 		labelStyle.Render("IP Range: "),
 		m.getIPTypeDisplayName(),
-	))
-	content.WriteString("\n\n")
+	)))
 
 	if m.ipModel.loading {
-		content.WriteString(loadingBlockStyle.Render(" BUSY ") + " Fetching IP data...")
+		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(loadingBlockStyle.Render(" ⟳ ") + " Fetching IP data..."))
 	} else if m.ipModel.error != "" {
-		content.WriteString(errorBlockStyle.Render(" ERROR ") + " " + m.ipModel.error)
+		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(errorBlockStyle.Render(" ❌ ") + " " + m.ipModel.error))
 	} else if m.ipModel.result != "" {
-		content.WriteString(successBlockStyle.Render(" OK ") + " IP Details:\n\n")
-		content.WriteString(m.ipModel.viewport.View())
-	} else {
-		content.WriteString(infoStyle.Render("Use Up/Down to change range, Enter to fetch"))
+		header := successBlockStyle.Render(" ✓ ") + " IP Details:\n\n"
+		resultContent := header + m.ipModel.viewport.View()
+		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(resultContent))
 	}
 
 	return content.String()
@@ -422,18 +372,16 @@ func (m MainModel) renderIPTab() string {
 func (m MainModel) renderProcessesTab() string {
 	var content strings.Builder
 
-	content.WriteString(headerStyle.Render("📊 NETWORK PROCESSES"))
-	content.WriteString("\n\n")
+	content.WriteString(headerStyle.Width(m.contentWidth - 2).Render("📊 NETWORK PROCESSES"))
 
 	if m.processesModel.loading {
-		content.WriteString(loadingBlockStyle.Render(" SCANNING ") + " Gathering connection list...")
+		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(loadingBlockStyle.Render(" ⟳ ") + " Gathering connection list..."))
 	} else if m.processesModel.error != "" {
-		content.WriteString(errorBlockStyle.Render(" ERROR ") + " " + m.processesModel.error)
+		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(errorBlockStyle.Render(" ❌ ") + " " + m.processesModel.error))
 	} else if m.processesModel.result != "" {
-		content.WriteString(successBlockStyle.Render(" FOUND ") + " Recent Connections:\n\n")
-		content.WriteString(m.processesModel.viewport.View())
-	} else {
-		content.WriteString(infoStyle.Render("Press Enter to scan active connections"))
+		header := successBlockStyle.Render(" ✓ ") + " Recent Connections:\n\n"
+		resultContent := header + m.processesModel.viewport.View()
+		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(resultContent))
 	}
 
 	return content.String()

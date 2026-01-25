@@ -5,8 +5,9 @@ import (
 	"net"
 	"strings"
 
-	"github.com/catpaladin/net-tools/pkg/network"
 	"github.com/charmbracelet/lipgloss"
+
+	"github.com/catpaladin/net-tools/pkg/network"
 )
 
 type DNSResult struct {
@@ -35,10 +36,8 @@ var (
 				MarginLeft(2)
 
 	tableHeaderStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("255")).
-				Background(borderColor).
-				Bold(true).
-				Padding(0, 1)
+				Foreground(primaryColor).
+				Bold(true)
 
 	tableRowStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("252"))
@@ -276,25 +275,15 @@ func formatProcessesResult(connections []ProcessesConnection, availableWidth int
 		return recordEmptyStyle.Render("No active network processes found")
 	}
 
-	if availableWidth < 40 {
-		availableWidth = 40
-	}
-
-	tableWidth := availableWidth - 8
-
-	var content strings.Builder
+	var tableContent strings.Builder
 
 	addrHeader := "Local Address"
 	portHeader := "Port"
 	pidHeader := "PID/Program"
 
-	minAddrLen := len(addrHeader)
-	minPortLen := len(portHeader)
-	minPIDLen := len(pidHeader)
-
-	maxAddrLen := minAddrLen
-	maxPortLen := minPortLen
-	maxPIDLen := minPIDLen
+	maxAddrLen := len(addrHeader)
+	maxPortLen := len(portHeader)
+	maxPIDLen := len(pidHeader)
 
 	for _, conn := range connections {
 		if len(conn.LocalAddr) > maxAddrLen {
@@ -308,71 +297,23 @@ func formatProcessesResult(connections []ProcessesConnection, availableWidth int
 		}
 	}
 
-	totalMinWidth := minAddrLen + minPortLen + minPIDLen + 6
-	totalMaxWidth := maxAddrLen + maxPortLen + maxPIDLen + 6
-
-	var addrWidth, portWidth, pidWidth int
-
-	if totalMaxWidth <= tableWidth {
-		addrWidth = maxAddrLen
-		portWidth = maxPortLen
-		pidWidth = maxPIDLen
-	} else if totalMinWidth <= tableWidth {
-		remainingWidth := tableWidth - 6
-
-		addrWidth = minAddrLen + (remainingWidth-minAddrLen-minPortLen-minPIDLen)*2/5
-		portWidth = minPortLen + (remainingWidth-minAddrLen-minPortLen-minPIDLen)*1/5
-		pidWidth = remainingWidth - addrWidth - portWidth
-
-		if addrWidth < minAddrLen {
-			addrWidth = minAddrLen
-		}
-		if portWidth < minPortLen {
-			portWidth = minPortLen
-		}
-		if pidWidth < minPIDLen {
-			pidWidth = minPIDLen
-		}
-	} else {
-		addrWidth = minAddrLen
-		portWidth = minPortLen
-		pidWidth = minPIDLen
-	}
-
-	var tableContent strings.Builder
+	addrWidth := maxAddrLen
+	portWidth := maxPortLen
+	pidWidth := maxPIDLen
 
 	headerLine := fmt.Sprintf("%-*s %-*s %-*s", addrWidth, tableHeaderStyle.Render(addrHeader), portWidth, tableHeaderStyle.Render(portHeader), pidWidth, tableHeaderStyle.Render(pidHeader))
 	tableContent.WriteString(headerLine)
-	tableContent.WriteString("\n\n")
+	tableContent.WriteString("\n")
 
 	for _, conn := range connections {
 		addr := conn.LocalAddr
 		port := conn.Port
 		pid := conn.PIDProgram
 
-		if len(addr) > addrWidth {
-			addr = addr[:addrWidth-3] + "..."
-		}
-		if len(port) > portWidth {
-			port = port[:portWidth-3] + "..."
-		}
-		if len(pid) > pidWidth {
-			pid = pid[:pidWidth-3] + "..."
-		}
-
-		dataLine := fmt.Sprintf("%-*s %-*s %-*s", addrWidth, addr, portWidth, port, pidWidth, pid)
+		dataLine := fmt.Sprintf("%-*s %-*s %-*s", addrWidth, tableRowStyle.Render(addr), portWidth, tableRowStyle.Render(port), pidWidth, tableRowStyle.Render(pid))
 		tableContent.WriteString(dataLine)
 		tableContent.WriteString("\n")
 	}
 
-	styledTable := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("252")).
-		Padding(1).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(subtleColor).
-		Render(strings.TrimSpace(tableContent.String()))
-
-	content.WriteString(styledTable)
-
-	return content.String()
+	return lipgloss.NewStyle().Padding(1, 0).Width(availableWidth).Render(tableContent.String())
 }

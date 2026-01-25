@@ -84,7 +84,7 @@ func (m MainModel) performProcesses() tea.Cmd {
 		}
 
 		// Format the results
-		formattedResult := formatProcessesResultPlain(connections, contentWidth-8)
+		formattedResult := formatProcessesResult(connections, contentWidth)
 
 		return processesResultMsg{
 			result: formattedResult,

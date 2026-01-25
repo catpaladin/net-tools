@@ -127,144 +127,138 @@ var keys = keyMap{
 
 // Modern color palette for consistent theming
 var (
-	// Primary colors - modern dark theme
-	primaryColor   = lipgloss.Color("39")  // Bright blue accent
-	secondaryColor = lipgloss.Color("69")  // Soft cyan
-	accentColor    = lipgloss.Color("207") // Modern Purple/Pink accent
+	// Primary colors - modern dark theme with enhanced contrast
+	primaryColor   = lipgloss.Color("85")  // Bright cyan
+	secondaryColor = lipgloss.Color("86")  // Aqua?
+	accentColor    = lipgloss.Color("226") // Warm yellow/orange
 	errorColor     = lipgloss.Color("196") // Bright red
-	warningColor   = lipgloss.Color("208") // Modern orange
-	successColor   = lipgloss.Color("40")  // Success green
-	mutedColor     = lipgloss.Color("242") // Light gray
-	borderColor    = lipgloss.Color("63")  // Deep indigo border
-	subtleColor    = lipgloss.Color("236") // Dark surface color
+	warningColor   = lipgloss.Color("220") // Orange/coral
+	successColor   = lipgloss.Color("46")  // Success green
+	mutedColor     = lipgloss.Color("240") // Light gray
+	borderColor    = lipgloss.Color("240") // Subtle gray border
+	subtleColor    = lipgloss.Color("238") // Dark surface color
 	highlightColor = lipgloss.Color("255") // Pure white for emphasis
-	bgColor        = lipgloss.Color("233") // Deep background
+	bgColor        = lipgloss.NoColor{}    // Transparent/Default
+	overlayColor   = lipgloss.Color("231") // Light overlay
 )
 
 // Unified styles for consistent appearance
 var (
 	// Main container that fills the window
 	appStyle = lipgloss.NewStyle().
-			Background(bgColor).
-			Foreground(lipgloss.Color("252"))
+			Margin(1, 2)
 
-	// Modern rounded tab styles (pill-shaped) - ensure background matches app
+	// Modern tab styles with enhanced visual separation
 	activeTabStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("255")).
 			Background(primaryColor).
 			Bold(true).
-			Padding(0, 2).
+			Padding(0, 1).
 			MarginRight(1).
-			Height(1)
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(primaryColor)
 
 	inactiveTabStyle = lipgloss.NewStyle().
 				Foreground(mutedColor).
-				Background(subtleColor).
-				Padding(0, 2).
+				Padding(0, 1).
 				MarginRight(1).
-				Height(1)
-
-	// Modern content styles with subtle background layering
-	tabOuterStyle = lipgloss.NewStyle().
-			Padding(1, 2).
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(subtleColor).
-			Background(lipgloss.Color("234"))
+				Border(lipgloss.RoundedBorder()).
+				BorderForeground(mutedColor)
 
 	// Modern header styles - ensure background matches container
 	headerStyle = lipgloss.NewStyle().
 			Foreground(primaryColor).
-			Background(lipgloss.Color("234")).
 			Bold(true).
 			Padding(0, 1).
 			MarginBottom(1)
 
+	// Title style
+	titleStyle = lipgloss.NewStyle().
+			Foreground(primaryColor).
+			Bold(true).
+			Padding(0, 2).
+			MarginBottom(1).
+			Border(lipgloss.RoundedBorder(), false, false, true, false).
+			BorderForeground(primaryColor)
+
 	// Modern label styles - ensure background matches container
 	labelStyle = lipgloss.NewStyle().
 			Foreground(secondaryColor).
-			Background(lipgloss.Color("234")).
+			Background(bgColor).
 			Bold(true).
 			Width(10).
 			MarginRight(1)
 
-	// Text input background should also match container
-	focusedPromptStyle = lipgloss.NewStyle().
-				Foreground(primaryColor).
-				Background(lipgloss.Color("234")).
-				Bold(true)
+	// Input row background style
+	inputRowStyle = lipgloss.NewStyle().
+			Padding(1).
+			MarginTop(1).
+			MarginBottom(1).
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(subtleColor)
 
-	unfocusedPromptStyle = lipgloss.NewStyle().
-				Foreground(mutedColor).
-				Background(lipgloss.Color("234"))
+	// Info box style
+	infoBoxStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(borderColor).
+			Padding(1).
+			MarginTop(1)
 
-	focusedTextStyle = lipgloss.NewStyle().
-				Foreground(highlightColor).
-				Background(lipgloss.Color("234"))
+	// Info style for helper text
+	infoStyle = lipgloss.NewStyle().
+			Foreground(mutedColor).
+			Background(bgColor)
 
-	unfocusedTextStyle = lipgloss.NewStyle().
-				Foreground(mutedColor).
-				Background(lipgloss.Color("234"))
-
-	cursorStyle = lipgloss.NewStyle().
+	// Help text styles
+	helpKeyStyle = lipgloss.NewStyle().
 			Foreground(primaryColor).
-			Background(lipgloss.Color("234"))
+			Background(bgColor)
 
-	// Enhanced status styles with block backgrounds
-	successBlockStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("255")).
-				Background(successColor).
-				Bold(true).
-				Padding(0, 1).
-				MarginRight(1)
+	helpValueStyle = lipgloss.NewStyle().
+			Foreground(secondaryColor).
+			Background(bgColor)
 
-	errorBlockStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("255")).
-			Background(errorColor).
-			Bold(true).
-			Padding(0, 1).
-			MarginRight(1)
-
-	loadingBlockStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("255")).
-				Background(warningColor).
-				Bold(true).
-				Padding(0, 1).
-				MarginRight(1)
-
-	// Enhanced result styles with specialized background
-	resultContentStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("252")).
-				Padding(1, 2).
-				Border(lipgloss.RoundedBorder()).
-				BorderForeground(subtleColor).
-				Background(lipgloss.Color("235"))
-
-	// Modern help styles with clean bar appearance
 	helpStyle = lipgloss.NewStyle().
 			Foreground(mutedColor).
 			Background(bgColor).
-			Padding(0, 2).
-			Height(1)
+			Padding(0, 1).
+			MarginTop(1)
 
-	helpKeyStyle = lipgloss.NewStyle().
-			Foreground(secondaryColor).
-			Background(bgColor).
-			Bold(true)
+	// Status block styles
+	loadingBlockStyle = lipgloss.NewStyle().
+				Foreground(warningColor).
+				Background(bgColor)
 
-	// Enhanced title style with gradient effect and modern framing
-	titleStyle = lipgloss.NewStyle().
+	errorBlockStyle = lipgloss.NewStyle().
+			Foreground(errorColor).
+			Background(bgColor)
+
+	successBlockStyle = lipgloss.NewStyle().
+				Foreground(successColor).
+				Background(bgColor)
+
+	// Cursor style
+	cursorStyle = lipgloss.NewStyle().
 			Foreground(primaryColor).
-			Background(bgColor).
-			Bold(true).
-			Padding(0, 2).
-			MarginBottom(1).
-			Border(lipgloss.NormalBorder(), false, false, true, false).
-			BorderForeground(primaryColor)
+			Background(bgColor)
 
-	// Styling for info text
-	infoStyle = lipgloss.NewStyle().
-			Foreground(mutedColor).
-			Background(lipgloss.Color("234"))
+	// Text input styles for focus states
+	focusedPromptStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("255")).
+				Background(primaryColor).
+				Bold(true)
+
+	focusedTextStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("255")).
+				Background(bgColor)
+
+	unfocusedPromptStyle = lipgloss.NewStyle().
+				Foreground(secondaryColor).
+				Background(bgColor)
+
+	unfocusedTextStyle = lipgloss.NewStyle().
+				Foreground(mutedColor).
+				Background(bgColor)
 )
 
 // Messages for async operations
