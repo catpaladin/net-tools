@@ -1,8 +1,9 @@
 package tui
 
 import (
+	"github.com/catpaladin/net-tools/internal/tui/components/anim"
+	"github.com/catpaladin/net-tools/internal/tui/styles"
 	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/lipgloss"
@@ -29,7 +30,7 @@ type MainModel struct {
 	portModel      *PortModel
 	ipModel        *IPModel
 	processesModel *ProcessesModel
-	spinner        spinner.Model
+	anim           *anim.Anim
 }
 
 // DNSModel represents the DNS lookup tab
@@ -125,21 +126,26 @@ var keys = keyMap{
 	),
 }
 
+// Get current theme
+func theme() *styles.Theme {
+	return styles.CurrentTheme()
+}
+
 // Modern color palette for consistent theming
 var (
-	// Primary colors - modern dark theme with enhanced contrast
-	primaryColor   = lipgloss.Color("85")  // Bright cyan
-	secondaryColor = lipgloss.Color("86")  // Aqua?
-	accentColor    = lipgloss.Color("226") // Warm yellow/orange
-	errorColor     = lipgloss.Color("196") // Bright red
-	warningColor   = lipgloss.Color("220") // Orange/coral
-	successColor   = lipgloss.Color("46")  // Success green
-	mutedColor     = lipgloss.Color("240") // Light gray
-	borderColor    = lipgloss.Color("240") // Subtle gray border
-	subtleColor    = lipgloss.Color("238") // Dark surface color
-	highlightColor = lipgloss.Color("255") // Pure white for emphasis
-	bgColor        = lipgloss.NoColor{}    // Transparent/Default
-	overlayColor   = lipgloss.Color("231") // Light overlay
+	// Primary colors mapped to theme
+	primaryColor   = theme().Primary
+	secondaryColor = theme().Secondary
+	accentColor    = theme().Accent
+	errorColor     = theme().Error
+	warningColor   = theme().Warning
+	successColor   = theme().Success
+	mutedColor     = theme().FgMuted
+	borderColor    = theme().Border
+	subtleColor    = theme().BgSubtle
+	highlightColor = theme().FgSelected
+	bgColor        = lipgloss.NoColor{}
+	overlayColor   = theme().BgOverlay
 )
 
 // Unified styles for consistent appearance
@@ -150,40 +156,37 @@ var (
 
 	// Modern tab styles with enhanced visual separation
 	activeTabStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("255")).
-			Background(primaryColor).
+			Foreground(theme().FgSelected).
+			Background(theme().Primary).
 			Bold(true).
-			Padding(0, 1).
-			MarginRight(1).
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(primaryColor)
+			Padding(0, 2).
+			MarginRight(1)
 
 	inactiveTabStyle = lipgloss.NewStyle().
-				Foreground(mutedColor).
-				Padding(0, 1).
-				MarginRight(1).
-				Border(lipgloss.RoundedBorder()).
-				BorderForeground(mutedColor)
+				Foreground(theme().FgMuted).
+				Background(theme().BgSubtle).
+				Padding(0, 2).
+				MarginRight(1)
 
 	// Modern header styles - ensure background matches container
 	headerStyle = lipgloss.NewStyle().
-			Foreground(primaryColor).
+			Foreground(theme().Primary).
 			Bold(true).
 			Padding(0, 1).
 			MarginBottom(1)
 
 	// Title style
 	titleStyle = lipgloss.NewStyle().
-			Foreground(primaryColor).
+			Foreground(theme().Primary).
 			Bold(true).
 			Padding(0, 2).
 			MarginBottom(1).
 			Border(lipgloss.RoundedBorder(), false, false, true, false).
-			BorderForeground(primaryColor)
+			BorderForeground(theme().Primary)
 
 	// Modern label styles - ensure background matches container
 	labelStyle = lipgloss.NewStyle().
-			Foreground(secondaryColor).
+			Foreground(theme().Secondary).
 			Background(bgColor).
 			Bold(true).
 			Width(10).
@@ -195,69 +198,69 @@ var (
 			MarginTop(1).
 			MarginBottom(1).
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(subtleColor)
+			BorderForeground(theme().BgSubtle)
 
 	// Info box style
 	infoBoxStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(borderColor).
+			BorderForeground(theme().Border).
 			Padding(1).
 			MarginTop(1)
 
 	// Info style for helper text
 	infoStyle = lipgloss.NewStyle().
-			Foreground(mutedColor).
+			Foreground(theme().FgMuted).
 			Background(bgColor)
 
 	// Help text styles
 	helpKeyStyle = lipgloss.NewStyle().
-			Foreground(primaryColor).
+			Foreground(theme().Primary).
 			Background(bgColor)
 
 	helpValueStyle = lipgloss.NewStyle().
-			Foreground(secondaryColor).
+			Foreground(theme().Secondary).
 			Background(bgColor)
 
 	helpStyle = lipgloss.NewStyle().
-			Foreground(mutedColor).
+			Foreground(theme().FgMuted).
 			Background(bgColor).
 			Padding(0, 1).
 			MarginTop(1)
 
 	// Status block styles
 	loadingBlockStyle = lipgloss.NewStyle().
-				Foreground(warningColor).
+				Foreground(theme().Warning).
 				Background(bgColor)
 
 	errorBlockStyle = lipgloss.NewStyle().
-			Foreground(errorColor).
+			Foreground(theme().Error).
 			Background(bgColor)
 
 	successBlockStyle = lipgloss.NewStyle().
-				Foreground(successColor).
+				Foreground(theme().Success).
 				Background(bgColor)
 
 	// Cursor style
 	cursorStyle = lipgloss.NewStyle().
-			Foreground(primaryColor).
+			Foreground(theme().Primary).
 			Background(bgColor)
 
 	// Text input styles for focus states
 	focusedPromptStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("255")).
-				Background(primaryColor).
+				Foreground(theme().FgSelected).
+				Background(theme().Primary).
 				Bold(true)
 
 	focusedTextStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("255")).
+				Foreground(theme().FgSelected).
 				Background(bgColor)
 
 	unfocusedPromptStyle = lipgloss.NewStyle().
-				Foreground(secondaryColor).
+				Foreground(theme().Secondary).
 				Background(bgColor)
 
 	unfocusedTextStyle = lipgloss.NewStyle().
-				Foreground(mutedColor).
+				Foreground(theme().FgMuted).
 				Background(bgColor)
 )
 

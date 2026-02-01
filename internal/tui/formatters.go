@@ -5,6 +5,7 @@ import (
 	"net"
 	"strings"
 
+	"github.com/catpaladin/net-tools/internal/tui/styles"
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/catpaladin/net-tools/pkg/network"
@@ -20,43 +21,43 @@ type DNSResult struct {
 
 var (
 	recordTypeStyle = lipgloss.NewStyle().
-			Foreground(primaryColor).
+			Foreground(styles.CurrentTheme().Primary).
 			Bold(true).
 			Padding(0, 1).
-			Background(subtleColor).
+			Background(styles.CurrentTheme().BgSubtle).
 			MarginBottom(1)
 
 	recordValueStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("252")).
+				Foreground(styles.CurrentTheme().FgBase).
 				MarginLeft(2)
 
 	recordEmptyStyle = lipgloss.NewStyle().
-				Foreground(mutedColor).
+				Foreground(styles.CurrentTheme().FgMuted).
 				Italic(true).
 				MarginLeft(2)
 
 	tableHeaderStyle = lipgloss.NewStyle().
-				Foreground(primaryColor).
+				Foreground(styles.CurrentTheme().Primary).
 				Bold(true)
 
 	tableRowStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("252"))
+			Foreground(styles.CurrentTheme().FgBase)
 
 	ipLabelStyle = lipgloss.NewStyle().
-			Foreground(secondaryColor).
+			Foreground(styles.CurrentTheme().Secondary).
 			Bold(true).
 			Width(12)
 
 	ipValueStyle = lipgloss.NewStyle().
-			Foreground(accentColor).
+			Foreground(styles.CurrentTheme().Accent).
 			Bold(true)
 
 	connectionSuccessStyle = lipgloss.NewStyle().
-				Foreground(successColor).
+				Foreground(styles.CurrentTheme().Success).
 				Bold(true)
 
 	connectionFailStyle = lipgloss.NewStyle().
-				Foreground(errorColor).
+				Foreground(styles.CurrentTheme().Error).
 				Bold(true)
 )
 

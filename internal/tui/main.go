@@ -4,19 +4,24 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/catpaladin/net-tools/internal/tui/components/anim"
+	"github.com/catpaladin/net-tools/internal/tui/components/logo"
+	"github.com/catpaladin/net-tools/internal/tui/styles"
 	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
 // NewModel creates a new TUI main model
 func NewModel() MainModel {
-	s := spinner.New()
-	s.Spinner = spinner.Pulse
-	s.Style = lipgloss.NewStyle().Foreground(primaryColor)
+	a := anim.New(anim.Settings{
+		Size:        10,
+		Label:       "Working",
+		CycleColors: true,
+	})
 
 	// Initialize all tab models
 	dnsModel := &DNSModel{
@@ -64,7 +69,7 @@ func NewModel() MainModel {
 		portModel:      portModel,
 		ipModel:        ipModel,
 		processesModel: processesModel,
-		spinner:        s,
+		anim:           a,
 	}
 }
 
@@ -76,12 +81,10 @@ func newTextInput(placeholder, prompt string) textinput.Model {
 	ti.CharLimit = 256
 	ti.Width = 40
 
-	// Configure proper text input styling for BubbleTea v1.x
-	// Use backgrounds that match the content container (234)
-	ti.PromptStyle = unfocusedPromptStyle
-	ti.TextStyle = unfocusedTextStyle
-	ti.PlaceholderStyle = unfocusedTextStyle
-	ti.Cursor.Style = cursorStyle
+	ti.PromptStyle = lipgloss.NewStyle().Foreground(theme().Tertiary)
+	ti.TextStyle = lipgloss.NewStyle().Foreground(theme().FgBase)
+	ti.PlaceholderStyle = lipgloss.NewStyle().Foreground(theme().FgSubtle)
+	ti.Cursor.Style = lipgloss.NewStyle().Foreground(theme().Primary)
 
 	return ti
 }
@@ -89,7 +92,7 @@ func newTextInput(placeholder, prompt string) textinput.Model {
 // Init initializes the TUI
 func (m MainModel) Init() tea.Cmd {
 	return tea.Batch(
-		m.spinner.Tick,
+		m.anim.Init(),
 		textinput.Blink,
 	)
 }
@@ -100,6 +103,9 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
+	case anim.StepMsg:
+		_, cmd = m.anim.Update(msg)
+		return m, cmd
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
@@ -192,10 +198,6 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	}
 
-	// Update spinner
-	m.spinner, cmd = m.spinner.Update(msg)
-	cmds = append(cmds, cmd)
-
 	// Update active tab model
 	switch m.activeTab {
 	case 0: // DNS Lookup
@@ -218,7 +220,12 @@ func (m MainModel) View() string {
 		return "Initializing..."
 	}
 
-	title := titleStyle.Render("NET-TOOLS")
+	title := logo.Render(logo.Opts{
+		FieldColor:  styles.CurrentTheme().FgMuted,
+		TitleColorA: styles.CurrentTheme().Primary,
+		TitleColorB: styles.CurrentTheme().Secondary,
+		Width:       m.width,
+	})
 
 	tabs := make([]string, len(m.tabs))
 	for i, tab := range m.tabs {
@@ -228,7 +235,9 @@ func (m MainModel) View() string {
 			tabs[i] = inactiveTabStyle.Render(tab.Name)
 		}
 	}
-	tabBar := lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
+	tabBar := lipgloss.NewStyle().
+		MarginBottom(1).
+		Render(lipgloss.JoinHorizontal(lipgloss.Top, tabs...))
 
 	var content string
 	switch m.activeTab {
@@ -277,18 +286,22 @@ func (m MainModel) handleEnter() (tea.Model, tea.Cmd) {
 	case 0: // DNS Lookup
 		if m.dnsModel.domainInput.Value() != "" {
 			m.dnsModel.loading = true
+			m.anim.SetLabel("Looking up records")
 			return m, m.performDNS(m.dnsModel.domainInput.Value())
 		}
 	case 1: // Port Test
 		if m.portModel.hostInput.Value() != "" && m.portModel.portInput.Value() != "" {
 			m.portModel.loading = true
+			m.anim.SetLabel("Testing connection")
 			return m, m.performPort(m.portModel.hostInput.Value(), m.portModel.portInput.Value())
 		}
 	case 2: // IP Address
 		m.ipModel.loading = true
+		m.anim.SetLabel("Fetching IP data")
 		return m, m.performIPLookup()
 	case 3: // Processes
 		m.processesModel.loading = true
+		m.anim.SetLabel("Gathering connections")
 		return m, m.performProcesses()
 	}
 	return m, nil
@@ -306,11 +319,21 @@ func (m MainModel) renderDNSTab() string {
 	content.WriteString(inputRow)
 
 	if m.dnsModel.loading {
-		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(loadingBlockStyle.Render(" ⟳ ") + " Looking up records..."))
+		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(m.anim.View()))
 	} else if m.dnsModel.error != "" {
-		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(errorBlockStyle.Render(" ❌ ") + " " + m.dnsModel.error))
+		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(
+			lipgloss.JoinHorizontal(lipgloss.Center,
+				errorBlockStyle.Render(" ❌ "),
+				" ",
+				lipgloss.NewStyle().Foreground(theme().Error).Render(m.dnsModel.error),
+			),
+		))
 	} else if m.dnsModel.result != "" {
-		header := successBlockStyle.Render(" ✓ ") + " DNS Records Found:\n\n"
+		header := lipgloss.JoinHorizontal(lipgloss.Center,
+			successBlockStyle.Render(" ✓ "),
+			" ",
+			lipgloss.NewStyle().Foreground(theme().Success).Bold(true).Render("DNS Records Found"),
+		) + "\n\n"
 		resultContent := header + m.dnsModel.viewport.View()
 		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(resultContent))
 	}
@@ -334,11 +357,21 @@ func (m MainModel) renderPortTab() string {
 	)))
 
 	if m.portModel.loading {
-		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(loadingBlockStyle.Render(" ⟳ ") + " Testing connection..."))
+		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(m.anim.View()))
 	} else if m.portModel.error != "" {
-		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(errorBlockStyle.Render(" ❌ ") + " " + m.portModel.error))
+		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(
+			lipgloss.JoinHorizontal(lipgloss.Center,
+				errorBlockStyle.Render(" ❌ "),
+				" ",
+				lipgloss.NewStyle().Foreground(theme().Error).Render(m.portModel.error),
+			),
+		))
 	} else if m.portModel.result != "" {
-		header := successBlockStyle.Render(" ✓ ") + " Connection successful:\n\n"
+		header := lipgloss.JoinHorizontal(lipgloss.Center,
+			successBlockStyle.Render(" ✓ "),
+			" ",
+			lipgloss.NewStyle().Foreground(theme().Success).Bold(true).Render("Connection Successful"),
+		) + "\n\n"
 		resultContent := header + m.portModel.viewport.View()
 		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(resultContent))
 	}
@@ -357,11 +390,21 @@ func (m MainModel) renderIPTab() string {
 	)))
 
 	if m.ipModel.loading {
-		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(loadingBlockStyle.Render(" ⟳ ") + " Fetching IP data..."))
+		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(m.anim.View()))
 	} else if m.ipModel.error != "" {
-		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(errorBlockStyle.Render(" ❌ ") + " " + m.ipModel.error))
+		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(
+			lipgloss.JoinHorizontal(lipgloss.Center,
+				errorBlockStyle.Render(" ❌ "),
+				" ",
+				lipgloss.NewStyle().Foreground(theme().Error).Render(m.ipModel.error),
+			),
+		))
 	} else if m.ipModel.result != "" {
-		header := successBlockStyle.Render(" ✓ ") + " IP Details:\n\n"
+		header := lipgloss.JoinHorizontal(lipgloss.Center,
+			successBlockStyle.Render(" ✓ "),
+			" ",
+			lipgloss.NewStyle().Foreground(theme().Success).Bold(true).Render("IP Details"),
+		) + "\n\n"
 		resultContent := header + m.ipModel.viewport.View()
 		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(resultContent))
 	}
@@ -375,11 +418,21 @@ func (m MainModel) renderProcessesTab() string {
 	content.WriteString(headerStyle.Width(m.contentWidth - 2).Render("📊 NETWORK PROCESSES"))
 
 	if m.processesModel.loading {
-		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(loadingBlockStyle.Render(" ⟳ ") + " Gathering connection list..."))
+		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(m.anim.View()))
 	} else if m.processesModel.error != "" {
-		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(errorBlockStyle.Render(" ❌ ") + " " + m.processesModel.error))
+		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(
+			lipgloss.JoinHorizontal(lipgloss.Center,
+				errorBlockStyle.Render(" ❌ "),
+				" ",
+				lipgloss.NewStyle().Foreground(theme().Error).Render(m.processesModel.error),
+			),
+		))
 	} else if m.processesModel.result != "" {
-		header := successBlockStyle.Render(" ✓ ") + " Recent Connections:\n\n"
+		header := lipgloss.JoinHorizontal(lipgloss.Center,
+			successBlockStyle.Render(" ✓ "),
+			" ",
+			lipgloss.NewStyle().Foreground(theme().Success).Bold(true).Render("Recent Connections"),
+		) + "\n\n"
 		resultContent := header + m.processesModel.viewport.View()
 		content.WriteString(infoBoxStyle.Width(m.contentWidth - 6).Render(resultContent))
 	}
@@ -443,27 +496,25 @@ func (m *MainModel) initializeTabState() {
 
 func (m *MainModel) setTabFocus() {
 	m.dnsModel.domainInput.Blur()
-	m.dnsModel.domainInput.PromptStyle = unfocusedPromptStyle
-	m.dnsModel.domainInput.TextStyle = unfocusedTextStyle
+	m.dnsModel.domainInput.PromptStyle = lipgloss.NewStyle().Foreground(theme().FgMuted)
 
 	m.portModel.hostInput.Blur()
-	m.portModel.hostInput.PromptStyle = unfocusedPromptStyle
-	m.portModel.hostInput.TextStyle = unfocusedTextStyle
+	m.portModel.hostInput.PromptStyle = lipgloss.NewStyle().Foreground(theme().FgMuted)
 	m.portModel.portInput.Blur()
-	m.portModel.portInput.PromptStyle = unfocusedPromptStyle
-	m.portModel.portInput.TextStyle = unfocusedTextStyle
+	m.portModel.portInput.PromptStyle = lipgloss.NewStyle().Foreground(theme().FgMuted)
 
 	switch m.activeTab {
 	case 0: // DNS Lookup
 		m.dnsModel.domainInput.Focus()
-		m.dnsModel.domainInput.PromptStyle = focusedPromptStyle
-		m.dnsModel.domainInput.TextStyle = focusedTextStyle
+		m.dnsModel.domainInput.PromptStyle = lipgloss.NewStyle().Foreground(theme().Tertiary).Bold(true)
 	case 1: // Port Test
-		m.portModel.hostInput.Focus()
-		m.portModel.hostInput.PromptStyle = focusedPromptStyle
-		m.portModel.hostInput.TextStyle = focusedTextStyle
-		m.portModel.focused = 0
-		// IP Address and Processes tabs don't have text inputs to focus
+		if m.portModel.focused == 0 {
+			m.portModel.hostInput.Focus()
+			m.portModel.hostInput.PromptStyle = lipgloss.NewStyle().Foreground(theme().Tertiary).Bold(true)
+		} else {
+			m.portModel.portInput.Focus()
+			m.portModel.portInput.PromptStyle = lipgloss.NewStyle().Foreground(theme().Tertiary).Bold(true)
+		}
 	}
 }
 
@@ -500,7 +551,11 @@ func (m MainModel) getIPTypeDisplayName() string {
 		typeName = "Both"
 	}
 
-	return activeTabStyle.
-		Background(secondaryColor).
+	return lipgloss.NewStyle().
+		Foreground(theme().FgSelected).
+		Background(theme().Secondary).
+		Bold(true).
+		Padding(0, 2).
+		MarginRight(1).
 		Render(typeName)
 }
