@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/catpaladin/net-tools/compare/v1.2.1...v1.3.0) (2026-02-01)
+
+
+### Features
+
+* **tui:** colors, styles, and animations to enhance tui ([88bee6d](https://github.com/catpaladin/net-tools/commit/88bee6da7ab287686a74617bec150f25dc2add33))
+* **tui:** enhancements to the tui style and display ([acd4491](https://github.com/catpaladin/net-tools/commit/acd44918cc63eb96a8b68f0bc0343b87a97cfa47))
+
 ## [1.2.1](https://github.com/catpaladin/net-tools/compare/v1.2.0...v1.2.1) (2025-12-25)
 
 
